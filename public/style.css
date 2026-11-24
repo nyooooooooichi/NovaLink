@@ -7,3 +7,41 @@
 .background-panel{border-top:1px solid var(--line);padding:16px;background:#0b1423}.panel-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}.panel-heading strong{display:block;font-size:13px}.panel-heading small,.panel-heading>span{display:block;color:var(--muted);font-size:10px;margin-top:4px}.panel-heading>span{text-align:right}.background-options{display:flex;gap:10px;flex-wrap:wrap}.background-choice{display:flex;flex-direction:column;gap:6px;align-items:center;padding:5px;border:1px solid transparent;background:transparent;color:#cbd6e6;border-radius:10px;cursor:pointer;font-size:10px}.background-choice.selected{border-color:var(--cyan);background:#17313b}.bg-preview{display:grid;place-items:center;width:76px;height:48px;border-radius:7px;border:1px solid #ffffff22;font-size:10px}.bg-none{background:repeating-linear-gradient(135deg,#26364b,#26364b 5px,#1a2739 5px,#1a2739 10px)}.bg-blur{background:linear-gradient(120deg,#61778a,#c1a9a0,#4c6671);filter:blur(.5px)}.bg-aurora{background:linear-gradient(135deg,#071b36,#146b78,#9b6bd0)}.bg-sunset{background:linear-gradient(135deg,#301b4c,#bd5965,#f4b36c)}.bg-studio{background:linear-gradient(135deg,#182536,#40556a,#a2b2bd)}.bg-forest{background:linear-gradient(135deg,#102c28,#39735a,#a2a66b)}.bg-upload{background:#1a2940;color:var(--cyan);font-size:24px}.emoji-bar{display:flex;gap:7px;padding:9px 12px 0}.emoji-bar button{border:1px solid var(--line);background:#17243a;border-radius:7px;padding:5px 7px;cursor:pointer;font-size:15px}.chat-item time{display:block;color:#74849a;font-size:9px;margin-top:4px}.source-video{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-10px;top:-10px}
 body.light-theme{--bg:#eef3f9;--panel:#fff;--line:#d5deea;--muted:#60718a;color:#152238;background:#eef3f9;color-scheme:light}body.light-theme .brand{color:#152238}body.light-theme .launch-card,body.light-theme .video-area,body.light-theme .chat-panel,body.light-theme .participant-bar{background:#fff;color:#152238}body.light-theme .launch-card input,body.light-theme .chat-form input{background:#f4f7fb;color:#152238;border-color:#d5deea}body.light-theme .video-name{background:#ffffffdd;color:#17243a}body.light-theme .control-btn{background:#e7edf5;color:#1c2a40;border-color:#cbd6e4}body.light-theme .participant-chip{background:#edf3fa;color:#23344c;border-color:#d5deea}body.light-theme .background-panel{background:#f6f9fc}body.light-theme .background-choice{color:#263850}body.light-theme .emoji-bar button{background:#edf3fa}
 @media(max-width:760px){.meeting-meta{gap:5px;flex-direction:column;align-items:flex-end}.participant-bar{align-items:flex-start}.panel-heading{align-items:flex-start;gap:10px}.panel-heading>span{max-width:130px}.background-options{gap:5px}.bg-preview{width:64px;height:42px}.controls{gap:6px}.control-btn{padding:9px 10px;font-size:11px}}
+
+/* Home experience: host / guest split */
+.hero{max-width:900px;margin-top:48px;animation:heroEnter .85s cubic-bezier(.2,.8,.2,1) both}
+@keyframes heroEnter{from{opacity:0;transform:translateY(24px);filter:blur(5px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
+.identity-card{width:min(360px,100%);margin:30px auto 18px;padding:15px 18px;border:1px solid var(--line);border-radius:14px;background:rgba(16,26,43,.78);text-align:left}
+.identity-card label,.entry-card label{display:block;font-size:9px;letter-spacing:1.8px;color:var(--muted);margin:0 0 8px}
+.identity-card input{width:100%;border:0;border-bottom:1px solid #34445e;background:transparent;color:white;padding:9px 2px;font:inherit;font-size:14px;outline:none}
+.identity-card input:focus{border-color:var(--cyan)}
+.entry-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;width:min(760px,100%);margin:0 auto;text-align:left}
+.entry-card{position:relative;overflow:hidden;padding:27px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,rgba(19,31,51,.96),rgba(9,17,31,.96));box-shadow:0 22px 65px #0004;transition:transform .3s,border-color .3s,box-shadow .3s;animation:cardEnter .7s both}
+.entry-card:nth-child(2){animation-delay:.12s}
+@keyframes cardEnter{from{opacity:0;transform:translateY(20px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.entry-card:hover{transform:translateY(-6px);border-color:#668aa8;box-shadow:0 28px 75px #0007}
+.host-card:before,.guest-card:before{content:"";position:absolute;width:220px;height:220px;right:-100px;top:-120px;border-radius:50%;filter:blur(55px);opacity:.25;pointer-events:none}
+.host-card:before{background:#5de3df}.guest-card:before{background:#a58cff}
+.entry-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;background:#20364a;color:var(--cyan);font-size:22px;margin-bottom:18px}
+.guest-card .entry-icon{background:#30294c;color:#c0aaff}
+.entry-kicker{font-size:9px;letter-spacing:2px;color:var(--cyan);font-weight:700}
+.guest-card .entry-kicker{color:#b5a2ff}
+.entry-card h2{font-size:25px;letter-spacing:-.8px;margin:9px 0}
+.entry-card p{font-size:12px;line-height:1.8;color:#9eacc1;min-height:43px;margin:0 0 14px}
+.entry-card ul{list-style:none;padding:0;margin:0 0 22px;color:#bdc9d9;font-size:11px;line-height:2.1}
+.entry-card li:before{content:"✓";color:var(--cyan);margin-right:9px}
+.entry-card .room-input{margin-top:9px}
+.entry-card .room-input input{margin-bottom:18px}
+.secondary-btn{width:100%;border:1px solid #8f7bd2;border-radius:9px;padding:13px;background:linear-gradient(100deg,#342b59,#24213e);color:#eee9ff;font-weight:700;font-size:12px;cursor:pointer;transition:filter .2s,transform .2s}
+.secondary-btn:hover,.primary-btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.secondary-btn span{float:right;font-size:17px;line-height:14px}
+.entry-card .primary-btn{font-size:12px}
+.home-note{font-size:10px;color:#7889a2;margin:22px 0 0}
+.home-note .live-dot{width:6px;height:6px}
+button{transition:filter .2s,transform .2s,background .2s}
+button:active{transform:scale(.97)}
+.meeting{animation:heroEnter .45s ease both}
+.video-tile{animation:tileEnter .45s ease both}
+@keyframes tileEnter{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+@media(max-width:650px){.entry-grid{grid-template-columns:1fr;gap:12px}.entry-card{padding:22px}.entry-card p{min-height:0}.hero{margin-top:28px}.identity-card{margin-top:22px}.entry-card h2{font-size:22px}}
+body.light-theme .identity-card,body.light-theme .entry-card{background:#fff;color:#152238}body.light-theme .identity-card input{color:#152238}body.light-theme .entry-card p{color:#60718a}body.light-theme .entry-card ul{color:#34445c}
