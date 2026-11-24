@@ -1,2 +1,31 @@
 # NovaLink
-Video meeting web application
+
+ブラウザから参加できるオンラインミーティングサービスの初期プロトタイプです。
+
+## 実装済みの機能
+- ルームIDまたは招待URLから参加
+- 最大10人のルーム管理
+- カメラ・マイクのオン／オフ
+- WebRTCによるビデオ通話
+- 画面共有
+- リアルタイムチャット
+
+## ローカル起動
+Node.js 18以降が必要です。
+
+```bash
+npm install
+npm start
+```
+
+ブラウザで http://localhost:3000 を開いてください。
+
+## 公開方法
+RenderなどのNode.js対応ホスティングサービスにデプロイできます。
+
+- Build command: `npm install`
+- Start command: `npm start`
+- WebSocket接続を許可するサービスを使用してください。
+
+## 現在の制限事項
+これは開発初期版です。WebRTCはP2Pメッシュ方式で、STUNサーバーのみを設定しています。ネットワーク環境によっては接続できない場合があります。一般公開前にTURNサーバー、HTTPS、アクセス制御、プライバシー対策、スパム対策を追加してください。大人数で安定運用する場合はLiveKitなどのSFU構成を推奨します。
