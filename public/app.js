@@ -153,14 +153,24 @@ function toast(message) {
   setTimeout(() => $("toast").classList.remove("show"), 2600);
 }
 function showRoomBrowser() {
-  $("home").classList.add("hidden");
-  $("roomBrowser").classList.remove("hidden");
+  const home = $("home") || document.querySelector(".hero");
+  const browser = $("roomBrowser");
+  if (!home || !browser) {
+    console.error("NovaLink: room browser elements are missing.", { home, browser });
+    toast("画面の読み込みに失敗しました。ページを再読み込みしてください。");
+    return;
+  }
+  home.classList.add("hidden");
+  browser.classList.remove("hidden");
   loadRooms();
 }
 function showHome() {
-  $("roomBrowser").classList.add("hidden");
-  $("home").classList.remove("hidden");
-  $("roomJoinPanel").classList.add("hidden");
+  const home = $("home") || document.querySelector(".hero");
+  const browser = $("roomBrowser");
+  const joinPanel = $("roomJoinPanel");
+  if (browser) browser.classList.add("hidden");
+  if (home) home.classList.remove("hidden");
+  if (joinPanel) joinPanel.classList.add("hidden");
   selectedRoomId = null;
 }
 function loadRooms() {
