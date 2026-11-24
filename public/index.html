@@ -24,7 +24,7 @@
     <div class="boot-status"><span class="boot-status-dot"></span><small id="bootStatus">INITIALIZING NOVALINK</small><b>01 / 03</b></div>
     <div class="boot-bottom">A NEW WAY TO CONNECT</div>
   </div>
-  <header class="topbar"><a class="brand" href="/"><span class="brand-mark">N</span><span>Nova<span class="brand-light">Link</span></span></a><div class="account-actions"><span id="accountIdentity" class="account-identity hidden"></span><button id="accountBtn" class="account-btn" type="button">ログイン / 登録</button></div><span class="top-note"><i></i> NEXT GENERATION COMMUNICATION <b>● ONLINE</b></span></header>
+  <header class="topbar"><a class="brand" href="/"><span class="brand-mark">N</span><span>Nova<span class="brand-light">Link</span></span></a><nav class="main-nav" aria-label="メインナビゲーション"><button type="button" class="main-nav-btn active" id="callHomeNav">通話ホーム</button><button type="button" class="main-nav-btn" id="communityNav">ホームチャット</button></nav><div class="account-actions"><span id="accountIdentity" class="account-identity hidden"></span><button id="accountBtn" class="account-btn" type="button">ログイン / 登録</button></div><span class="top-note"><i></i> NEXT GENERATION COMMUNICATION <b>● ONLINE</b></span></header>
   <main>
     <section class="hero" id="home">
       <div class="eyebrow"><span></span> THE FUTURE OF CONNECTION <b> / 01</b></div>
@@ -41,7 +41,7 @@
           <label for="createRoomName">ROOM NAME / 部屋名</label>
           <input id="createRoomName" class="room-create-input" maxlength="40" placeholder="例：友達との通話ルーム">
           <label for="createRoomPassword">PASSWORD / パスワード（必須）</label>
-          <input id="createRoomPassword" class="room-create-input" type="password" maxlength="64" placeholder="4文字以上">
+          <div class="password-field"><input id="createRoomPassword" class="room-create-input" type="password" maxlength="64" placeholder="4文字以上"><button type="button" class="password-toggle" data-password-target="createRoomPassword" aria-label="パスワードを表示">表示</button></div>
           <button class="primary-btn" id="hostBtn">パスワード付きで部屋を作成 <span>→</span></button>
         </article>
         <article class="entry-card guest-card">
@@ -53,6 +53,10 @@
       </div>
       <p class="home-note"><span class="live-dot"></span> 最大10人 · ブラウザだけでつながるオンラインミーティング</p>
       <div class="feature-row"><div><b>01</b><span>VIDEO CALL</span></div><div><b>02</b><span>SCREEN SHARE</span></div><div><b>03</b><span>LIVE CHAT</span></div></div>
+
+    </section>
+
+    <section class="community-page hidden" id="communityPage" aria-label="ホームチャット">
       <section class="lobby-panel" aria-label="NovaLinkホームチャット">
         <div class="lobby-head">
           <div><div class="eyebrow"><span></span> NOVALINK COMMUNITY</div><h2>ホームチャット <span class="lobby-live"><i></i> LIVE</span></h2><p>ここで予定を相談できます。サイトを開いている人同士でリアルタイムに会話できます。</p></div>
@@ -76,7 +80,7 @@
       <div class="room-join-panel hidden" id="roomJoinPanel">
         <div><small>SELECTED ROOM</small><h3 id="selectedRoomTitle">部屋名</h3></div>
         <label for="roomPassword">PASSWORD / パスワード</label>
-        <input id="roomPassword" type="password" maxlength="64" placeholder="部屋のパスワード">
+        <div class="password-field"><input id="roomPassword" type="password" maxlength="64" placeholder="部屋のパスワード"><button type="button" class="password-toggle" data-password-target="roomPassword" aria-label="パスワードを表示">表示</button></div>
         <div class="room-join-actions"><button class="secondary-btn" id="cancelRoomJoinBtn">キャンセル</button><button class="primary-btn" id="selectedRoomJoinBtn">この部屋に参加 →</button></div>
       </div>
     </section>
