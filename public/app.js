@@ -153,13 +153,13 @@ function toast(message) {
   setTimeout(() => $("toast").classList.remove("show"), 2600);
 }
 function showRoomBrowser() {
-  $("hero").classList.add("hidden");
+  $("home").classList.add("hidden");
   $("roomBrowser").classList.remove("hidden");
   loadRooms();
 }
 function showHome() {
   $("roomBrowser").classList.add("hidden");
-  $("hero").classList.remove("hidden");
+  $("home").classList.remove("hidden");
   $("roomJoinPanel").classList.add("hidden");
   selectedRoomId = null;
 }
@@ -226,7 +226,7 @@ function enterMeeting(result, name, role) {
   selfId = result.selfId;
   roomId = result.roomId;
   $("roomBrowser").classList.add("hidden");
-  $("hero").classList.add("hidden");
+  $("home").classList.add("hidden");
   $("meeting").classList.remove("hidden");
   $("meetingTitle").textContent = result.roomName || "ミーティング";
   $("roomLabel").textContent = "ROOM / " + result.roomId;
