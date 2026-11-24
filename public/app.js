@@ -455,10 +455,21 @@ async function acquireMedia() {
         throw new Error("このブラウザではカメラ機能を利用できません。");
       }
       // iPhoneでは前面カメラを優先し、画面内再生に必要な属性も明示する。
-      localStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "user" } },
-        audio: true
-      });
+      const videoConstraints = { facingMode: { ideal: "user" } };
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          video: videoConstraints,
+          audio: true
+        });
+      } catch (combinedError) {
+        // A denied microphone permission must not prevent the camera preview.
+        console.warn("Combined camera/microphone request failed; retrying camera only:", combinedError);
+        localStream = await navigator.mediaDevices.getUserMedia({
+          video: videoConstraints,
+          audio: false
+        });
+        toast("カメラは接続しました。マイクの許可を確認してください。");
+      }
       const source = $("cameraSource");
       const preview = $("localVideo");
       source.muted = true;
