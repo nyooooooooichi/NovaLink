@@ -1,1 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#091323"/><path d="M112 390V122h67l154 171V122h67v268h-64L179 213v177z" fill="#78e8f1"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080812"/>
+      <stop offset="1" stop-color="#03050d"/>
+    </linearGradient>
+    <linearGradient id="n" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4430a8"/>
+      <stop offset=".48" stop-color="#2346b9"/>
+      <stop offset="1" stop-color="#176b9d"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7958dc" stop-opacity=".85"/>
+      <stop offset="1" stop-color="#258cc4" stop-opacity=".75"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="13"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <path d="M125 365 183 139h70l82 135 33-135h66l-59 234h-68l-83-135-33 135z" fill="#263b9a" opacity=".3" filter="url(#shadow)"/>
+  <path d="M125 365 183 139h70l82 135 33-135h66l-59 234h-68l-83-135-33 135z" fill="url(#n)" stroke="url(#edge)" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M184 140h68l82 134-34 9z" fill="#8291ff" opacity=".13"/>
+  <path d="M125 365h66l33-135-41-1z" fill="#8d55e8" opacity=".12"/>
+  <path d="M335 274 368 139h66l-59 234h-68z" fill="#3a9bd4" opacity=".14"/>
+  <path d="M91 330C150 421 315 412 419 190" fill="none" stroke="#392c8d" stroke-width="13" stroke-linecap="round" opacity=".55"/>
+</svg>
