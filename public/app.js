@@ -565,14 +565,21 @@ function openLifeGame() {
 function lifeMoney(value) {
   return new Intl.NumberFormat("ja-JP").format(value || 0) + "円";
 }
+let lifeLastRollAt = 0;
 function renderLifeGame() {
   const game = lifeGameState;
   const create = $("lifeCreateBtn"), join = $("lifeJoinBtn"), ready = $("lifeReadyBtn");
   const start = $("lifeStartBtn"), roll = $("lifeRollBtn");
   const board = $("lifeBoard"), playersBox = $("lifePlayers");
+  const nowTitle = $("lifeNowTitle"), nowText = $("lifeNowText"), nowIcon = $("lifeNowIcon");
+  const diceStage = $("lifeDiceStage"), dice = $("lifeDice");
   if (!game) {
     $("lifeStatus").textContent = "ゲーム未作成";
     $("lifeTurnLabel").textContent = "ホストがゲームを作成してください";
+    nowTitle.textContent = "ゲームを始めよう";
+    nowText.textContent = roomRole === "host" ? "「ゲームを作成」→ CPUや友達を追加 → 全員が準備OKで開始。" : "ホストがゲームを作成すると参加できます。";
+    nowIcon.textContent = "✦";
+    dice.textContent = "⚄"; $("lifeDiceCaption").textContent = "DICE";
     create.hidden = roomRole !== "host";
     join.hidden = ready.hidden = start.hidden = roll.hidden = true;
     $("lifeCpuAddBtn").hidden = $("lifeCpuRemoveBtn").hidden = $("lifeCpuCount").hidden = true;
@@ -585,16 +592,15 @@ function renderLifeGame() {
   const me = game.players.find(player => player.id === selfId);
   const active = game.players[game.turnIndex];
   const isHost = game.hostId === selfId;
-  $("lifeStatus").textContent = game.status === "lobby" ? "参加者募集中" : game.status === "playing" ? "ゲーム進行中" : "ゲーム終了";
   const humanCount = game.players.filter(player => !player.isCpu).length;
-  const cpuCountForLabel = game.players.filter(player => player.isCpu).length;
-  $("lifeTurnLabel").textContent = game.status === "lobby" ? "人間 " + humanCount + "人 · CPU " + cpuCountForLabel + "人" :
-    game.status === "playing" ? "第" + game.turnNumber + "ターン · " + (active?.name || "—") + " の番" : "最終結果が確定しました";
+  const cpuCount = game.players.filter(player => player.isCpu).length;
+  $("lifeStatus").textContent = game.status === "lobby" ? "参加者募集中" : game.status === "playing" ? "ゲーム進行中" : "ゲーム終了";
+  $("lifeTurnLabel").textContent = game.status === "lobby" ? "人間 " + humanCount + "人 · CPU " + cpuCount + "人" :
+    game.status === "playing" ? "第" + game.turnNumber + "ターン" : "最終結果が確定しました";
   create.hidden = true;
   join.hidden = !(game.status === "lobby" && !me);
   ready.hidden = !(game.status === "lobby" && !!me);
   ready.textContent = me?.ready ? "準備を解除" : "準備OK";
-  const cpuCount = game.players.filter(player => player.isCpu).length;
   const canManageCpu = game.status === "lobby" && isHost;
   $("lifeCpuAddBtn").hidden = !canManageCpu;
   $("lifeCpuRemoveBtn").hidden = !canManageCpu;
@@ -605,21 +611,53 @@ function renderLifeGame() {
   start.hidden = !canManageCpu;
   start.disabled = game.players.length < 2 || !game.players.every(player => player.isCpu || player.ready);
   roll.hidden = !(game.status === "playing" && me && active?.id === selfId && !game.currentEvent);
+  if (game.status === "lobby") {
+    nowTitle.textContent = "参加者を待っています";
+    nowText.textContent = "プレイヤーは「準備OK」を押してください。CPUは自動で参加し、ホストが「ゲーム開始」を押すとスタートします。";
+    nowIcon.textContent = "👥";
+  } else if (game.status === "finished") {
+    const ranking = [...game.players].sort((a,b)=>b.cash-a.cash);
+    nowTitle.textContent = "人生ゲーム終了！ " + (ranking[0]?.name || "—") + " が資産トップ";
+    nowText.textContent = "最終資産 " + lifeMoney(ranking[0]?.cash || 0) + "。プレイヤー一覧で全員の結果を確認できます。";
+    nowIcon.textContent = "🏆";
+  } else if (game.currentEvent) {
+    const eventPlayer = game.players.find(p=>p.id===game.currentEvent.playerId);
+    nowTitle.textContent = (eventPlayer?.name || "プレイヤー") + " にイベント発生！";
+    nowText.textContent = game.currentEvent.title + "。下のイベント欄から選択すると、結果が反映されて次の人へ進みます。";
+    nowIcon.textContent = "❗";
+  } else if (active) {
+    nowTitle.textContent = active.id === selfId ? "あなたの番です！" : active.name + " の番です";
+    nowText.textContent = active.id === selfId ? "「サイコロを振る」を押してください。出た目の数だけ進み、止まったマスの効果が発生します。" : (active.isCpu ? "CPUがサイコロを振って行動しています。少し待つと結果が表示されます。" : "相手がサイコロを振るのを待っています。");
+    nowIcon.textContent = "🎲";
+  }
+  if (game.lastRoll) {
+    dice.textContent = ["⚀","⚁","⚂","⚃","⚄","⚅"][Math.max(1,Math.min(6,game.lastRoll.value))-1];
+    $("lifeDiceCaption").textContent = game.lastRoll.playerName + " · " + game.lastRoll.value + " マス";
+    if (game.lastRoll.at !== lifeLastRollAt) {
+      lifeLastRollAt = game.lastRoll.at;
+      diceStage.classList.remove("rolling");
+      void diceStage.offsetWidth;
+      diceStage.classList.add("rolling");
+    }
+  } else {
+    dice.textContent = "⚄"; $("lifeDiceCaption").textContent = "DICE";
+  }
   board.innerHTML = "";
   const boardColumns = window.matchMedia("(max-width: 620px)").matches ? 4 : 8;
+  const tileLabels = {start:"START",finish:"GOAL",salary:"給料",event:"イベント",bonus:"ボーナス",expense:"出費",choice:"選択",career:"仕事",investment:"投資"};
   game.board.forEach(tile => {
     const cell = document.createElement("div");
     const row = Math.floor(tile.id / boardColumns), column = tile.id % boardColumns;
     cell.style.gridRow = String(row + 1);
     cell.style.gridColumn = String(row % 2 === 0 ? column + 1 : boardColumns - column);
-    cell.className = "life-tile life-tile-" + tile.type;
-    const number = document.createElement("small"); number.textContent = tile.id === 0 ? "START" : tile.id === game.board.length - 1 ? "GOAL" : String(tile.id).padStart(2,"0");
+    cell.className = "life-tile life-tile-" + tile.type + (game.players.some(p=>p.position===tile.id && p.id===active?.id) ? " is-current-tile" : "");
+    const number = document.createElement("small"); number.textContent = tile.id === 0 ? "START" : tile.id === game.board.length - 1 ? "GOAL" : String(tile.id).padStart(2,"0") + " · " + (tileLabels[tile.type] || "マス");
     const title = document.createElement("strong"); title.textContent = tile.title;
     cell.append(number, title);
     const occupants = game.players.filter(player => player.position === tile.id);
     if (occupants.length) {
       const tokens = document.createElement("div"); tokens.className = "life-tokens";
-      occupants.forEach((player, index) => {
+      occupants.forEach(player => {
         const token = document.createElement("span"); token.className = "life-token life-token-" + (game.players.indexOf(player) % 10);
         token.title = player.name; token.textContent = (player.name || "?").slice(0,1);
         tokens.append(token);
@@ -631,7 +669,7 @@ function renderLifeGame() {
   playersBox.innerHTML = "";
   game.players.forEach((player, index) => {
     const card = document.createElement("article");
-    card.className = "life-player-card" + (active?.id === player.id && game.status === "playing" ? " is-active" : "");
+    card.className = "life-player-card" + (active?.id === player.id && game.status === "playing" ? " is-active" : "") + (player.finished ? " is-finished" : "");
     const avatar = document.createElement("span"); avatar.className = "life-player-avatar life-token-" + (index % 10); avatar.textContent = player.name.slice(0,1);
     const info = document.createElement("div"); info.className = "life-player-info";
     const name = document.createElement("strong"); name.textContent = player.name + (player.id === game.hostId ? " · HOST" : player.isCpu ? " · CPU" : "");
@@ -659,7 +697,7 @@ function renderLifeGame() {
         button.append(label,detail); button.onclick = () => lifeRequest("life:choose", { choiceId: choice.id }); choices.append(button);
       });
     } else {
-      const waiting = document.createElement("p"); waiting.className = "life-muted"; waiting.textContent = (game.players.find(p => p.id === event.playerId)?.name || "プレイヤー") + " が選択中です。"; choices.append(waiting);
+      const waiting = document.createElement("p"); waiting.className = "life-muted"; waiting.textContent = (game.players.find(p => p.id === event.playerId)?.name || "プレイヤー") + " が選択中です。選択が終わると自動で次の人に進みます。"; choices.append(waiting);
     }
   }
 }
