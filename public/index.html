@@ -40,6 +40,18 @@
       </div>
       <p class="home-note"><span class="live-dot"></span> 最大10人 · ブラウザだけでつながるオンラインミーティング</p>
       <div class="feature-row"><div><b>01</b><span>VIDEO CALL</span></div><div><b>02</b><span>SCREEN SHARE</span></div><div><b>03</b><span>LIVE CHAT</span></div></div>
+      <section class="lobby-panel" aria-label="NovaLinkホームチャット">
+        <div class="lobby-head">
+          <div><div class="eyebrow"><span></span> NOVALINK COMMUNITY</div><h2>ホームチャット <span class="lobby-live"><i></i> LIVE</span></h2><p>ここで予定を相談できます。サイトを開いている人同士でリアルタイムに会話できます。</p></div>
+          <button type="button" class="lobby-notify-btn" id="lobbyNotifyBtn" aria-pressed="false">通知：OFF</button>
+        </div>
+        <div class="lobby-messages" id="lobbyMessages" aria-live="polite"><div class="lobby-empty">チャットに接続しています...</div></div>
+        <form class="lobby-form" id="lobbyForm">
+          <input id="lobbyInput" maxlength="500" placeholder="例：今日の20時から通話できる人いる？" autocomplete="off" aria-label="ホームチャットのメッセージ">
+          <button type="submit" aria-label="送信">送信 →</button>
+        </form>
+        <div class="lobby-footnote" id="lobbyNotifyHint">通知をONにすると、このサイトを別タブで開いている間の新着メッセージをお知らせします。</div>
+      </section>
     </section>
 
     <section class="room-browser hidden" id="roomBrowser">
