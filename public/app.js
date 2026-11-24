@@ -35,6 +35,7 @@ async function join(role = "guest") {
     selfId = result.selfId;
     $("home").classList.add("hidden");
     $("meeting").classList.remove("hidden");
+    document.body.classList.add("meeting-active");
     $("meetingTitle").textContent = name + (role === "host" ? " のルーム" : " が参加中");
     $("roomLabel").textContent = "ROOM / " + roomId;
     $("memberCount").textContent = result.peers.length + 1;
