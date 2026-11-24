@@ -195,11 +195,11 @@ async function ensureBackgroundEngine() {
   segmentation = new SelfieSegmentation({ locateFile: file => "https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/" + file });
   segmentation.setOptions({ modelSelection: 1 });
   segmentation.onResults(drawBackground);
+  sourceVideo = $("cameraSource");
   outputCanvas = document.createElement("canvas");
   outputCanvas.width = sourceVideo.videoWidth || 1280;
   outputCanvas.height = sourceVideo.videoHeight || 720;
   outputCtx = outputCanvas.getContext("2d");
-  sourceVideo = $("cameraSource");
   processedStream = outputCanvas.captureStream(24);
   const audio = localStream.getAudioTracks()[0];
   if (audio) processedStream.addTrack(audio);
@@ -237,6 +237,14 @@ function drawBackground(results) {
   if (!outputCtx || backgroundMode === "none") return;
   const ctx = outputCtx, w = outputCanvas.width, h = outputCanvas.height;
   ctx.save();
+  if (!cameraOn) {
+    ctx.globalCompositeOperation = "source-over";
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#080d19";
+    ctx.fillRect(0, 0, w, h);
+    ctx.restore();
+    return;
+  }
   ctx.globalCompositeOperation = "source-over";
   ctx.filter = "none";
   ctx.clearRect(0, 0, w, h);
