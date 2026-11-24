@@ -25,19 +25,35 @@
         <article class="entry-card host-card">
           <div class="entry-icon">✦</div><div class="entry-kicker">FOR HOST</div>
           <h2>ルームを作成</h2><p>あなたがホストになって、ミーティングを始めます。</p>
-          <ul><li>ルームIDを自動発行</li><li>招待リンクを共有</li><li>最大10人で通話</li></ul>
-          <button class="primary-btn" id="hostBtn">ホストとして開始 <span>→</span></button>
+          <label for="createRoomName">ROOM NAME / 部屋名</label>
+          <input id="createRoomName" class="room-create-input" maxlength="40" placeholder="例：友達との通話ルーム">
+          <label for="createRoomPassword">PASSWORD / パスワード（必須）</label>
+          <input id="createRoomPassword" class="room-create-input" type="password" maxlength="64" placeholder="4文字以上">
+          <button class="primary-btn" id="hostBtn">パスワード付きで部屋を作成 <span>→</span></button>
         </article>
         <article class="entry-card guest-card">
           <div class="entry-icon">↗</div><div class="entry-kicker">FOR GUEST</div>
-          <h2>ルームに参加</h2><p>招待されたルームIDを入力して参加します。</p>
-          <label for="roomId">ROOM ID / 招待コード</label>
-          <div class="room-input"><input id="roomId" maxlength="64" placeholder="例：A8K2QZ"><button class="icon-btn" id="randomRoom" title="ランダムIDを入力">↗</button></div>
-          <button class="secondary-btn" id="joinBtn">ゲストとして参加 <span>→</span></button>
+          <h2>ルームに参加</h2><p>公開中の部屋を一覧から探して、パスワードを入力して参加します。</p>
+          <ul><li>公開中の部屋をすべて表示</li><li>参加人数と空き状況を確認</li><li>パスワード認証で安全に参加</li></ul>
+          <button class="secondary-btn" id="browseRoomsBtn">部屋を探す <span>→</span></button>
         </article>
       </div>
       <p class="home-note"><span class="live-dot"></span> 最大10人 · ブラウザだけでつながるオンラインミーティング</p>
       <div class="feature-row"><div><b>01</b><span>VIDEO CALL</span></div><div><b>02</b><span>SCREEN SHARE</span></div><div><b>03</b><span>LIVE CHAT</span></div></div>
+    </section>
+
+    <section class="room-browser hidden" id="roomBrowser">
+      <div class="room-browser-head">
+        <div><div class="eyebrow"><span></span> OPEN ROOMS</div><h2>公開中の部屋</h2><p>NovaLinkで現在作成されている部屋です。参加には各部屋のパスワードが必要です。</p></div>
+        <div class="room-browser-actions"><button class="control-btn" id="refreshRoomsBtn">↻ 更新</button><button class="control-btn" id="backHomeBtn">← 戻る</button></div>
+      </div>
+      <div class="room-list" id="roomList"><div class="room-list-empty">部屋を読み込んでいます...</div></div>
+      <div class="room-join-panel hidden" id="roomJoinPanel">
+        <div><small>SELECTED ROOM</small><h3 id="selectedRoomTitle">部屋名</h3></div>
+        <label for="roomPassword">PASSWORD / パスワード</label>
+        <input id="roomPassword" type="password" maxlength="64" placeholder="部屋のパスワード">
+        <div class="room-join-actions"><button class="secondary-btn" id="cancelRoomJoinBtn">キャンセル</button><button class="primary-btn" id="selectedRoomJoinBtn">この部屋に参加 →</button></div>
+      </div>
     </section>
 
     <section class="meeting hidden" id="meeting">
