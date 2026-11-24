@@ -1105,3 +1105,7 @@ footer{color:#8c9bb1;border-top-color:#27354a}
   .chat-switch{padding:12px 6px;font-size:12px}
   .chat-form{position:sticky;bottom:0;background:#0c1422}
 }
+
+
+/* HIDE PAGE SWITCHER DURING AN ACTIVE CALL */
+.topbar.is-in-meeting>.main-nav{display:none!important}
