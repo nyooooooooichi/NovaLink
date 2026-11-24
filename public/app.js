@@ -65,7 +65,7 @@ function removePeer(id) {
   const peer = peers.get(id); if (peer) peer.pc.close();
   peers.delete(id); document.getElementById("tile-" + id)?.remove();
 }
-socket.on("peer:joined", ({ id, name }) => { toast(name + " が参加しました"); });
+socket.on("peer:joined", async ({ id, name }) => { await makePeer(id, name, false); toast(name + " が参加しました"); });
 socket.on("peer:left", ({ id }) => { removePeer(id); toast("参加者が退出しました"); });
 socket.on("room:count", count => $("memberCount").textContent = count);
 socket.on("signal", async ({ from, data }) => {
