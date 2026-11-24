@@ -14,7 +14,16 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body class="dark-theme">
-  <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div><div class="grid-plane"></div><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="pointer-glow" id="pointerGlow"></div><div class="boot-screen" id="bootScreen"><div class="boot-symbol">N</div><div class="boot-word">NOVA<span>LINK</span></div><div class="boot-line"><i></i></div><small>ESTABLISHING CONNECTION</small></div>
+  <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div><div class="grid-plane"></div><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="pointer-glow" id="pointerGlow"></div><div class="boot-screen" id="bootScreen" aria-label="NovaLinkを起動中">
+    <div class="boot-stars" aria-hidden="true"></div>
+    <div class="boot-orbit boot-orbit-a" aria-hidden="true"></div>
+    <div class="boot-orbit boot-orbit-b" aria-hidden="true"></div>
+    <div class="boot-core-wrap"><div class="boot-core-glow"></div><div class="boot-core"><span>N</span></div></div>
+    <div class="boot-word"><span class="boot-word-main">NOVA</span><span class="boot-word-sub">LINK</span></div>
+    <div class="boot-line"><i></i></div>
+    <div class="boot-status"><span class="boot-status-dot"></span><small id="bootStatus">INITIALIZING NOVALINK</small><b>01 / 03</b></div>
+    <div class="boot-bottom">A NEW WAY TO CONNECT</div>
+  </div>
   <header class="topbar"><a class="brand" href="/"><span class="brand-mark">N</span><span>Nova<span class="brand-light">Link</span></span></a><div class="account-actions"><span id="accountIdentity" class="account-identity hidden"></span><button id="accountBtn" class="account-btn" type="button">ログイン / 登録</button></div><span class="top-note"><i></i> NEXT GENERATION COMMUNICATION <b>● ONLINE</b></span></header>
   <main>
     <section class="hero" id="home">
