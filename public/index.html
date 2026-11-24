@@ -136,11 +136,17 @@
             </div>
           </section>
         </div>
-        <aside class="chat-panel">
-          <div class="chat-heading">ROOM CHAT <span>● LIVE</span></div>
-          <div id="chatMessages" class="chat-messages"><div class="system-message">メッセージで会話を始めましょう。</div></div>
-          <div class="emoji-bar"><button data-emoji="😀">😀</button><button data-emoji="😂">😂</button><button data-emoji="👍">👍</button><button data-emoji="❤️">❤️</button><button data-emoji="🎉">🎉</button></div>
-          <form id="chatForm" class="chat-form"><input id="chatInput" maxlength="1000" placeholder="メッセージを入力..." autocomplete="off"><button aria-label="送信">↑</button></form>
+        <aside class="chat-panel" id="meetingChatPanel">
+          <div class="chat-switcher" role="tablist" aria-label="チャットの切り替え">
+            <button type="button" class="chat-switch active" id="roomChatTab" role="tab" aria-selected="true">ルームチャット</button>
+            <button type="button" class="chat-switch" id="homeChatTab" role="tab" aria-selected="false">ホームチャット</button>
+          </div>
+          <div class="chat-heading" id="meetingChatHeading">ROOM CHAT <span>● LIVE</span></div>
+          <div id="chatMessages" class="chat-messages meeting-chat-messages"><div class="system-message">メッセージで会話を始めましょう。</div></div>
+          <div id="meetingLobbyMessages" class="chat-messages meeting-chat-messages hidden" aria-live="polite"><div class="system-message">ホームチャットに接続しています...</div></div>
+          <div class="emoji-bar" id="roomEmojiBar"><button type="button" data-emoji="😀">😀</button><button type="button" data-emoji="😂">😂</button><button type="button" data-emoji="👍">👍</button><button type="button" data-emoji="❤️">❤️</button><button type="button" data-emoji="🎉">🎉</button></div>
+          <form id="chatForm" class="chat-form"><input id="chatInput" maxlength="1000" placeholder="ルームにメッセージ..." autocomplete="off"><button aria-label="送信">↑</button></form>
+          <form id="meetingLobbyForm" class="chat-form hidden"><input id="meetingLobbyInput" maxlength="500" placeholder="ホームチャットにメッセージ..." autocomplete="off"><button aria-label="送信">↑</button></form>
         </aside>
       </div>
       <section id="lifeGamePanel" class="life-game-panel hidden" aria-label="NOVALINK LIFE">
