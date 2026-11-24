@@ -430,7 +430,6 @@ async function createRoom() {
   const roomName = $("createRoomName").value.trim();
   const password = $("createRoomPassword").value;
   const name = $("displayName").value.trim() || "Host";
-  if (!roomName) return toast("部屋名を入力してください。");
   if (password.length < 4 || password.length > 64) return toast("パスワードは4〜64文字で設定してください。");
   if (!await acquireMedia()) return;
   $("hostBtn").disabled = true;
