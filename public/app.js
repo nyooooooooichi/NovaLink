@@ -567,6 +567,7 @@ function enterMeeting(result, name, role) {
   $("roomBrowser").classList.add("hidden");
   $("home").classList.add("hidden");
   $("meeting").classList.remove("hidden");
+  document.querySelector(".topbar")?.classList.add("is-in-meeting");
   const localPreview = $("localVideo");
   if (localStream) {
     localPreview.muted = true;
@@ -1270,6 +1271,7 @@ async function cleanupMeetingAndReturnHome() {
   $("stopShareBtn").classList.add("hidden");
   $("shareBtn").classList.remove("active");
   $("meeting").classList.add("hidden");
+  document.querySelector(".topbar")?.classList.remove("is-in-meeting");
   $("lifeGamePanel").classList.add("hidden");
   roomId = null; selfId = null; roomRole = null; lifeGameState = null;
   showHome();
