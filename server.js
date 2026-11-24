@@ -372,6 +372,11 @@ io.on("connection", socket => {
     socket.data.pushEndpoint = null;
     reply({ ok: true });
   });
+  socket.on("room:leave", (_data, reply = () => {}) => {
+    leaveRoom(socket);
+    reply({ ok: true });
+  });
+
   socket.on("room:list", (_data, reply = () => {}) => reply({ ok: true, rooms: publicRoomList() }));
 
   socket.on("room:create", async ({ roomName, password, name } = {}, reply = () => {}) => {
