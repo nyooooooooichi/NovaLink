@@ -382,3 +382,86 @@ footer{color:#8c9bb1;border-top-color:#27354a}
 .life-tokens .life-token{transition:transform .2s ease,filter .2s ease}
 .life-dice-stage.rolling>span{animation:lifeDiceTumble .72s cubic-bezier(.2,.8,.3,1)}
 @keyframes lifeDiceTumble{0%{transform:translateY(0) rotate(0) scale(.8);filter:blur(1px)}20%{transform:translateY(-12px) rotate(110deg) scale(1.2)}42%{transform:translateY(3px) rotate(270deg) scale(.95)}63%{transform:translateY(-7px) rotate(440deg) scale(1.1)}82%{transform:translateY(1px) rotate(620deg)}100%{transform:translateY(0) rotate(720deg) scale(1);filter:none}}
+
+
+/* NOVALINK LIFE — large-screen readability overhaul */
+.life-game-panel{
+  width:100%;
+  padding:clamp(20px,3vw,36px);
+  border-radius:22px;
+}
+.life-game-header{padding-bottom:24px}
+.life-eyebrow{font-size:12px;letter-spacing:3px}
+.life-game-header h2{font-size:clamp(30px,4vw,44px)}
+.life-game-header h2 span{font-size:16px}
+.life-game-header p{font-size:14px;line-height:1.8}
+.life-toolbar{padding:22px 0;gap:18px}
+.life-toolbar strong{font-size:17px}
+.life-toolbar small{font-size:13px}
+.life-action{padding:13px 18px;font-size:14px;border-radius:11px}
+.life-cpu-count{font-size:12px;padding:9px 12px}
+.life-now-panel{gap:22px;padding:22px 26px;margin:18px 0 22px}
+.life-now-icon{width:62px;height:62px;font-size:30px;border-radius:17px}
+.life-now-copy small{font-size:11px;letter-spacing:2.2px}
+.life-now-copy strong{font-size:23px;margin:6px 0}
+.life-now-copy p{font-size:14px;line-height:1.8}
+.life-dice-stage{width:100px}
+.life-dice-stage>span{font-size:48px}
+.life-dice-stage>small{font-size:11px}
+.life-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+.life-board-wrap{width:100%;border-radius:18px}
+.life-board-heading{padding:18px 22px}
+.life-board-heading b{font-size:12px;letter-spacing:2.5px}
+.life-board-heading span,.life-board-heading small{font-size:12px}
+.life-board{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;padding:18px;min-height:0}
+.life-tile{min-height:126px;padding:13px 12px;gap:10px;border-radius:13px}
+.life-tile>small{font-size:12px;letter-spacing:1.2px}
+.life-tile>strong{font-size:14px;line-height:1.55}
+.life-tokens{gap:5px}
+.life-token{width:27px;height:27px;font-size:12px;border-width:2px}
+.life-sidebar{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.life-side-card,.life-event-card{padding:18px;border-radius:15px}
+.life-side-card h3{font-size:13px;letter-spacing:1.5px;margin-bottom:14px}
+.life-side-card h3 span{font-size:12px}
+.life-player-list{gap:9px}
+.life-player-card{grid-template-columns:34px minmax(0,1fr) auto;gap:10px;padding:11px;border-radius:11px}
+.life-player-avatar{width:32px;height:32px;font-size:13px}
+.life-player-info strong{font-size:13px}
+.life-player-info small{font-size:11px}
+.life-cash{font-size:12px}
+.life-event-card>small{font-size:11px}
+.life-event-card h3{font-size:22px}
+.life-event-card>p{font-size:13px;line-height:1.8}
+.life-event-choices{gap:9px}
+.life-choice-btn{padding:13px;border-radius:10px;gap:6px}
+.life-choice-btn strong{font-size:14px}
+.life-choice-btn small{font-size:12px;line-height:1.65}
+.life-log{gap:10px;max-height:300px}
+.life-log p{font-size:12px;line-height:1.75;padding-bottom:9px}
+.life-muted{font-size:13px}
+.life-footnote{font-size:11px;margin-top:16px}
+.life-moving-token{width:42px;height:42px;font-size:16px}
+@media(max-width:1000px){
+  .life-sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .life-board{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
+@media(max-width:700px){
+  .life-game-panel{padding:15px}
+  .life-game-header h2{font-size:27px}
+  .life-game-header h2 span{font-size:13px}
+  .life-toolbar-actions{gap:7px}
+  .life-action{font-size:12px;padding:11px 10px}
+  .life-now-panel{padding:14px;gap:10px}
+  .life-now-icon{width:43px;height:43px;font-size:21px}
+  .life-now-copy small{font-size:9px;letter-spacing:1px}
+  .life-now-copy strong{font-size:17px}
+  .life-now-copy p{font-size:12px}
+  .life-dice-stage{width:58px;padding:5px}
+  .life-dice-stage>span{font-size:30px}
+  .life-board{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:10px}
+  .life-tile{min-height:105px;padding:10px 8px;gap:8px}
+  .life-tile>small{font-size:10px}
+  .life-tile>strong{font-size:12px}
+  .life-token{width:23px;height:23px;font-size:10px}
+  .life-sidebar{grid-template-columns:1fr}
+}
