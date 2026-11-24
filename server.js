@@ -24,6 +24,9 @@ app.get("/health", (_req, res) => res.json({ ok: true, app: "NovaLink" }));
 
 // Room passwords are salted and hashed on the server; plaintext passwords are never stored.
 const rooms = new Map();
+const lobbyMessages = [];
+const LOBBY_HISTORY_LIMIT = 60;
+const lastLobbyMessageAt = new Map();
 function roomMembers(roomId) {
   return [...(rooms.get(roomId)?.members || [])];
 }
@@ -100,6 +103,27 @@ function leaveRoom(socket) {
 }
 
 io.on("connection", socket => {
+  socket.emit("lobby:history", lobbyMessages);
+  socket.on("lobby:send", ({ text, name } = {}) => {
+    const message = String(text || "").trim().slice(0, 500);
+    const displayName = String(name || "Guest").trim().slice(0, 24) || "Guest";
+    if (!message) return;
+    const now = Date.now();
+    const previous = lastLobbyMessageAt.get(socket.id) || 0;
+    if (now - previous < 650) return;
+    lastLobbyMessageAt.set(socket.id, now);
+    const item = {
+      id: crypto.randomUUID(),
+      senderId: socket.id,
+      name: displayName,
+      text: message,
+      at: now
+    };
+    lobbyMessages.push(item);
+    if (lobbyMessages.length > LOBBY_HISTORY_LIMIT) lobbyMessages.shift();
+    io.emit("lobby:message", item);
+  });
+
   socket.on("room:list", (_data, reply = () => {}) => reply({ ok: true, rooms: publicRoomList() }));
 
   socket.on("room:create", async ({ roomName, password, name } = {}, reply = () => {}) => {
@@ -151,7 +175,7 @@ io.on("connection", socket => {
       id: socket.id, name: socket.data.name || "Guest", text: message, at: Date.now()
     });
   });
-  socket.on("disconnect", () => leaveRoom(socket));
+  socket.on("disconnect", () => { lastLobbyMessageAt.delete(socket.id); leaveRoom(socket); });
 });
 
 server.listen(PORT, () => console.log(`NovaLink running on port ${PORT}`));
