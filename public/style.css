@@ -1060,3 +1060,48 @@ footer{color:#8c9bb1;border-top-color:#27354a}
     -webkit-transform:translateZ(0);
   }
 }
+
+
+/* IN-CALL CHAT SWITCHER */
+.chat-switcher{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:5px;
+  padding:9px;
+  border-bottom:1px solid #293750;
+  background:rgba(8,14,25,.88);
+}
+.chat-switch{
+  min-width:0;
+  border:1px solid #2a3b56;
+  border-radius:9px;
+  padding:11px 8px;
+  color:#91a3bd;
+  background:#101b2d;
+  font:600 12px/1.3 inherit;
+  cursor:pointer;
+  transition:background .2s,border-color .2s,color .2s,box-shadow .2s;
+}
+.chat-switch.active{
+  color:#eef6ff;
+  border-color:#5a83c7;
+  background:linear-gradient(135deg,#203b60,#26345d);
+  box-shadow:inset 0 0 0 1px #8ab5ff22,0 5px 16px #0003;
+}
+.meeting-chat-messages{min-height:270px;max-height:390px}
+#meetingLobbyMessages .lobby-message{max-width:100%;grid-template-columns:30px minmax(0,1fr);padding:9px 10px}
+#meetingLobbyMessages .lobby-message-avatar{width:28px;height:28px}
+#meetingLobbyMessages .lobby-message-meta strong{font-size:10px}
+#meetingLobbyMessages .lobby-message-meta time{font-size:9px}
+#meetingLobbyMessages .lobby-message p{font-size:12px;line-height:1.55}
+#meetingLobbyForm{margin-top:auto}
+@media(min-width:781px){
+  .chat-panel{position:sticky;top:18px;align-self:start;max-height:calc(100vh - 36px);display:flex;flex-direction:column}
+  .meeting-chat-messages{min-height:220px;max-height:calc(100vh - 300px);flex:1}
+}
+@media(max-width:780px){
+  .chat-panel{display:flex;flex-direction:column;min-height:340px;max-height:58vh}
+  .meeting-chat-messages{min-height:150px;max-height:none;flex:1}
+  .chat-switch{padding:12px 6px;font-size:12px}
+  .chat-form{position:sticky;bottom:0;background:#0c1422}
+}
