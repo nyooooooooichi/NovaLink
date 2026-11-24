@@ -145,43 +145,141 @@ let micOn = true, cameraOn = true;
 let segmentation = null, backgroundMode = "none", backgroundImage = null;
 let processedStream = null, processing = false, segmentationReady = false;
 let sourceVideo = null, outputCanvas = null, outputCtx = null, frameBusy = false;
+let selectedRoomId = null;
 
 function toast(message) {
   $("toast").textContent = message;
   $("toast").classList.add("show");
-  setTimeout(() => $("toast").classList.remove("show"), 2400);
+  setTimeout(() => $("toast").classList.remove("show"), 2600);
 }
-function randomId() { return Math.random().toString(36).slice(2, 8).toUpperCase(); }
-$("randomRoom").onclick = () => $("roomId").value = randomId();
-
-async function join(role = "guest") {
-  const name = $("displayName").value.trim() || "Guest";
-  roomId = role === "host" ? randomId() : $("roomId").value.trim();
-  if (!roomId) { toast("参加するルームIDを入力してください。"); return; }
-  $("roomId").value = roomId;
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-  } catch (e) {
-    toast("カメラ・マイクを利用できません。ブラウザの権限を確認してください。");
-    return;
-  }
-  $("cameraSource").srcObject = localStream;
-  await $("cameraSource").play().catch(() => {});
-  $("localVideo").srcObject = localStream;
-  socket.emit("room:join", { roomId, name, role }, async (result) => {
-    if (!result?.ok) { localStream.getTracks().forEach(t => t.stop()); localStream = null; toast(result?.error || "参加できませんでした。"); return; }
-    selfId = result.selfId;
-    $("home").classList.add("hidden");
-    $("meeting").classList.remove("hidden");
-    $("meetingTitle").textContent = name + (role === "host" ? " のルーム" : " が参加中");
-    $("roomLabel").textContent = "ROOM / " + roomId;
-    $("memberCount").textContent = result.peers.length + 1;
-    updateParticipants(name, result.peers);
-    $("selfName").textContent = name + (role === "host" ? " · HOST" : " · GUEST");
-    history.replaceState({}, "", "/?room=" + encodeURIComponent(roomId));
-    for (const peer of result.peers) await makePeer(peer.id, peer.name, true);
+function showRoomBrowser() {
+  $("hero").classList.add("hidden");
+  $("roomBrowser").classList.remove("hidden");
+  loadRooms();
+}
+function showHome() {
+  $("roomBrowser").classList.add("hidden");
+  $("hero").classList.remove("hidden");
+  $("roomJoinPanel").classList.add("hidden");
+  selectedRoomId = null;
+}
+function loadRooms() {
+  $("roomList").innerHTML = '<div class="room-list-empty">部屋を読み込んでいます...</div>';
+  socket.emit("room:list", {}, result => {
+    if (!result?.ok) return $("roomList").innerHTML = '<div class="room-list-empty">部屋一覧を取得できませんでした。</div>';
+    renderRoomList(result.rooms || []);
   });
 }
+function renderRoomList(rooms) {
+  const list = $("roomList");
+  list.innerHTML = "";
+  if (!rooms.length) {
+    const empty = document.createElement("div");
+    empty.className = "room-list-empty";
+    empty.textContent = "現在、公開中の部屋はありません。";
+    list.append(empty);
+    return;
+  }
+  rooms.forEach(room => {
+    const card = document.createElement("article");
+    card.className = "room-list-card";
+    const info = document.createElement("div");
+    info.className = "room-list-info";
+    const title = document.createElement("h3");
+    title.textContent = room.name;
+    const meta = document.createElement("p");
+    meta.textContent = "🔒 パスワード必須  ·  " + room.count + " / " + room.max + " 人";
+    info.append(title, meta);
+    const button = document.createElement("button");
+    button.className = "room-select-btn";
+    const full = room.count >= room.max;
+    button.disabled = full;
+    button.textContent = full ? "満員" : "参加する →";
+    button.addEventListener("click", () => {
+      selectedRoomId = room.id;
+      $("selectedRoomTitle").textContent = room.name;
+      $("roomPassword").value = "";
+      $("roomJoinPanel").classList.remove("hidden");
+      $("roomPassword").focus();
+    });
+    card.append(info, button);
+    list.append(card);
+  });
+}
+socket.on("room:list:update", rooms => {
+  if (!$("roomBrowser").classList.contains("hidden")) renderRoomList(rooms || []);
+});
+
+async function acquireMedia() {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    $("cameraSource").srcObject = localStream;
+    await $("cameraSource").play().catch(() => {});
+    $("localVideo").srcObject = localStream;
+    return true;
+  } catch (e) {
+    toast("カメラ・マイクを利用できません。ブラウザの権限を確認してください。");
+    return false;
+  }
+}
+function enterMeeting(result, name, role) {
+  selfId = result.selfId;
+  roomId = result.roomId;
+  $("roomBrowser").classList.add("hidden");
+  $("hero").classList.add("hidden");
+  $("meeting").classList.remove("hidden");
+  $("meetingTitle").textContent = result.roomName || "ミーティング";
+  $("roomLabel").textContent = "ROOM / " + result.roomId;
+  $("memberCount").textContent = result.peers.length + 1;
+  updateParticipants(name, result.peers);
+  $("selfName").textContent = name + (role === "host" ? " · HOST" : " · GUEST");
+  history.replaceState({}, "", "/");
+  for (const peer of result.peers) makePeer(peer.id, peer.name, true);
+}
+async function createRoom() {
+  const roomName = $("createRoomName").value.trim();
+  const password = $("createRoomPassword").value;
+  const name = $("displayName").value.trim() || "Host";
+  if (!roomName) return toast("部屋名を入力してください。");
+  if (password.length < 4 || password.length > 64) return toast("パスワードは4〜64文字で設定してください。");
+  if (!await acquireMedia()) return;
+  $("hostBtn").disabled = true;
+  socket.emit("room:create", { roomName, password, name }, result => {
+    $("hostBtn").disabled = false;
+    if (!result?.ok) {
+      localStream?.getTracks().forEach(track => track.stop()); localStream = null;
+      return toast(result?.error || "部屋を作成できませんでした。");
+    }
+    $("createRoomPassword").value = "";
+    enterMeeting(result, name, "host");
+  });
+}
+async function joinSelectedRoom() {
+  if (!selectedRoomId) return toast("参加する部屋を選択してください。");
+  const password = $("roomPassword").value;
+  if (!password) return toast("パスワードを入力してください。");
+  const name = $("displayName").value.trim() || "Guest";
+  if (!await acquireMedia()) return;
+  $("selectedRoomJoinBtn").disabled = true;
+  socket.emit("room:join", { roomId: selectedRoomId, password, name }, result => {
+    $("selectedRoomJoinBtn").disabled = false;
+    if (!result?.ok) {
+      localStream?.getTracks().forEach(track => track.stop()); localStream = null;
+      $("cameraSource").srcObject = null; $("localVideo").srcObject = null;
+      return toast(result?.error || "参加できませんでした。");
+    }
+    $("roomPassword").value = "";
+    enterMeeting(result, name, "guest");
+  });
+}
+$("hostBtn").onclick = createRoom;
+$("browseRoomsBtn").onclick = showRoomBrowser;
+$("refreshRoomsBtn").onclick = loadRooms;
+$("backHomeBtn").onclick = showHome;
+$("cancelRoomJoinBtn").onclick = () => $("roomJoinPanel").classList.add("hidden");
+$("selectedRoomJoinBtn").onclick = joinSelectedRoom;
+$("roomPassword").addEventListener("keydown", event => { if (event.key === "Enter") joinSelectedRoom(); });
+
 function outgoingStream() { return processedStream || localStream; }
 async function makePeer(id, name, initiator) {
   if (peers.has(id)) return peers.get(id);
@@ -490,11 +588,18 @@ $("leaveBtn").onclick = async () => {
   peers.forEach(({pc}) => pc.close()); peers.clear();
   localStream?.getTracks().forEach(t => t.stop());
   if (screenStream) screenStream.getTracks().forEach(t => t.stop());
+  socket.disconnect();
   location.href = "/";
 };
-$("hostBtn").onclick = () => join("host");
-$("joinBtn").onclick = () => join("guest");
-$("roomId").value = new URLSearchParams(location.search).get("room") || "";
+socket.on("room:closed", ({ message } = {}) => {
+  peers.forEach(({pc}) => pc.close()); peers.clear();
+  localStream?.getTracks().forEach(track => track.stop()); localStream = null;
+  if (screenStream) screenStream.getTracks().forEach(track => track.stop());
+  roomId = null; selfId = null;
+  $("meeting").classList.add("hidden");
+  showHome();
+  toast(message || "部屋が終了しました。");
+});
 
 
 // Premium interface motion: pointer light and cinematic intro.
