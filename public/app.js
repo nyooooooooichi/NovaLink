@@ -1068,7 +1068,7 @@ const runNovaBoot = () => {
   if (!boot || boot.dataset.bootStarted === "1") return;
   boot.dataset.bootStarted = "1";
   try { initAuth(); } catch (error) { console.error("NovaLink auth initialization:", error); }
-  let audioContext = null, masterGain = null, reverb = null, audioStarted = false, bootFinished = false;
+  let audioContext = null, masterGain = null, reverb = null, audioStarted = false, audioStarting = false;
   const updateBoot = (message, value, activeStep) => {
     const status=$("bootStatus"), percent=$("bootPercent"), fill=$("bootProgressFill");
     const steps=boot.querySelectorAll(".boot-progress-steps span");
@@ -1113,10 +1113,12 @@ const runNovaBoot = () => {
   window.setTimeout(()=>updateBoot("SYNCHRONIZING NETWORK",38,1),900);
   window.setTimeout(()=>{boot.classList.add("sequence-lock");updateBoot("SECURE CHANNEL ESTABLISHED",72,2);},1850);
   window.setTimeout(()=>{boot.classList.add("sequence-launch");updateBoot("WELCOME TO NOVALINK",100,2);},2850);
-  window.setTimeout(()=>{bootFinished=true;boot.classList.add("done");},3850);
-  const startAudio=async()=>{if(audioStarted||bootFinished)return;try{if(await makeAudio())playBootSound();}catch(error){console.info("NovaLink audio autoplay blocked; waiting for interaction.",error);}};
+  window.setTimeout(()=>{boot.classList.add("done");},3850);
+  const startAudio=async()=>{if(audioStarted||audioStarting)return;audioStarting=true;try{if(await makeAudio())playBootSound();}catch(error){console.info("NovaLink audio playback is waiting for another interaction.",error);}finally{audioStarting=false;}};
+  // Attempt autoplay where permitted, then retry on the first user gesture even
+  // if the visual intro has already finished (common on iPhone Safari).
   void startAudio();
-  const unlockAudio=()=>{if(!audioStarted&&!bootFinished)void startAudio();};
+  const unlockAudio=()=>{if(!audioStarted)void startAudio();};
   ["pointerdown","touchstart","keydown"].forEach(name=>window.addEventListener(name,unlockAudio,{once:true,passive:true}));
 };
 const setupNovaPointerGlow = () => {
