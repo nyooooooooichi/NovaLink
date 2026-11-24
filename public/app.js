@@ -153,6 +153,8 @@ $("shareBtn").onclick = async () => {
   if (screenStream) return;
   try {
     await stopBackgroundProcessing();
+    backgroundMode = "none";
+    updateBackgroundUI();
     screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
     const track = screenStream.getVideoTracks()[0];
     for (const { pc } of peers.values()) {
