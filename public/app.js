@@ -1,7 +1,7 @@
 const socket = io();
 const $ = (id) => document.getElementById(id);
 
-let authClient = null, authUser = null, authMode = "login", pendingAvatarData = null;
+let authClient = null, authUser = null, authMode = "login", pendingAvatarBlob = null, pendingAvatarPreview = null;
 function authMessage(message, isError = false) {
   const node = $("authMessage");
   if (!node) return;
@@ -41,7 +41,7 @@ function paintAuthState() {
     const name = currentProfileName();
     $("accountIdentity").textContent = name;
     $("profileUsername").value = name;
-    $("profileAvatarPreview").src = authUser.user_metadata?.avatar_data || authUser.user_metadata?.avatar_url || makeAvatarFallback(name);
+    $("profileAvatarPreview").src = authUser.user_metadata?.avatar_url || makeAvatarFallback(name);
     if (!$("displayName").value.trim() || $("displayName").value === "Guest") $("displayName").value = name;
   }
 }
@@ -126,9 +126,14 @@ $("profileAvatarFile").onchange = event => {
       const scale = Math.max(256 / image.width, 256 / image.height);
       const width = image.width * scale, height = image.height * scale;
       ctx.drawImage(image, (256 - width) / 2, (256 - height) / 2, width, height);
-      pendingAvatarData = canvas.toDataURL("image/jpeg", 0.78);
-      $("profileAvatarPreview").src = pendingAvatarData;
-      authMessage("アイコン画像を読み込みました。保存すると反映されます。");
+      canvas.toBlob(blob => {
+        if (!blob) return authMessage("画像を変換できませんでした。", true);
+        pendingAvatarBlob = blob;
+        if (pendingAvatarPreview) URL.revokeObjectURL(pendingAvatarPreview);
+        pendingAvatarPreview = URL.createObjectURL(blob);
+        $("profileAvatarPreview").src = pendingAvatarPreview;
+        authMessage("アイコン画像を読み込みました。保存すると反映されます。");
+      }, "image/jpeg", 0.78);
     };
     image.onerror = () => authMessage("画像を読み込めませんでした。", true);
     image.src = reader.result;
@@ -143,11 +148,21 @@ $("profileSave").onclick = async () => {
   $("profileSave").disabled = true;
   try {
     const updates = { username };
-    if (pendingAvatarData) updates.avatar_data = pendingAvatarData;
+    if (pendingAvatarBlob) {
+      const { error: uploadError } = await authClient.storage.from("avatars").upload(
+        authUser.id + "/avatar.jpg", pendingAvatarBlob,
+        { upsert: true, contentType: "image/jpeg", cacheControl: "3600" }
+      );
+      if (uploadError) throw uploadError;
+      const { data: publicData } = authClient.storage.from("avatars").getPublicUrl(authUser.id + "/avatar.jpg");
+      updates.avatar_url = publicData.publicUrl + "?v=" + Date.now();
+    }
     const { data, error } = await authClient.auth.updateUser({ data: updates });
     if (error) throw error;
     authUser = data.user;
-    pendingAvatarData = null;
+    pendingAvatarBlob = null;
+    if (pendingAvatarPreview) URL.revokeObjectURL(pendingAvatarPreview);
+    pendingAvatarPreview = null;
     paintAuthState();
     authMessage("プロフィールを保存しました。");
   } catch (error) { authMessage(error.message || "保存できませんでした。", true); }
@@ -157,7 +172,7 @@ $("authSignOut").onclick = async () => {
   if (!authClient) return;
   const { error } = await authClient.auth.signOut();
   if (error) authMessage(error.message, true);
-  else { authUser = null; pendingAvatarData = null; paintAuthState(); authMessage("ログアウトしました。"); }
+  else { authUser = null; pendingAvatarBlob = null; if (pendingAvatarPreview) URL.revokeObjectURL(pendingAvatarPreview); pendingAvatarPreview = null; paintAuthState(); authMessage("ログアウトしました。"); }
 };
 
 let localStream = null, screenStream = null, roomId = null, selfId = null;
