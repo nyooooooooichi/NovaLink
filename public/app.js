@@ -21,6 +21,16 @@ function currentProfileName() {
   return authUser?.user_metadata?.username || authUser?.user_metadata?.full_name ||
     authUser?.user_metadata?.name || authUser?.email?.split("@")[0] || "NovaLink User";
 }
+function setEmailAuthMode(mode) {
+  const signup = mode === "signup";
+  $("emailLoginForm").classList.toggle("hidden", signup);
+  $("emailSignupForm").classList.toggle("hidden", !signup);
+  $("emailLoginTab").classList.toggle("selected", !signup);
+  $("emailSignupTab").classList.toggle("selected", signup);
+  $("emailLoginTab").setAttribute("aria-selected", String(!signup));
+  $("emailSignupTab").setAttribute("aria-selected", String(signup));
+  authMessage("");
+}
 function paintAuthState() {
   const signedIn = !!authUser;
   $("authSignedOut").classList.toggle("hidden", signedIn);
@@ -73,6 +83,51 @@ document.querySelectorAll("[data-provider]").forEach(button => button.addEventLi
   button.disabled = false;
   if (error) authMessage(error.message, true);
 }));
+
+$("emailLoginTab").onclick = () => setEmailAuthMode("login");
+$("emailSignupTab").onclick = () => setEmailAuthMode("signup");
+$("emailLoginForm").onsubmit = async event => {
+  event.preventDefault();
+  if (!authClient) return authMessage("認証設定がまだ完了していません。", true);
+  const email = $("emailLoginAddress").value.trim();
+  const password = $("emailLoginPassword").value;
+  const submit = $("emailLoginSubmit");
+  submit.disabled = true;
+  try {
+    const { data, error } = await authClient.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    authUser = data.user;
+    paintAuthState();
+    authMessage("ログインしました。");
+  } catch (error) {
+    authMessage(error.message || "ログインできませんでした。メールアドレスとパスワードを確認してください。", true);
+  } finally { submit.disabled = false; }
+};
+$("emailSignupForm").onsubmit = async event => {
+  event.preventDefault();
+  if (!authClient) return authMessage("認証設定がまだ完了していません。", true);
+  const email = $("emailSignupAddress").value.trim();
+  const password = $("emailSignupPassword").value;
+  const confirmation = $("emailSignupPasswordConfirm").value;
+  if (password.length < 8) return authMessage("パスワードは8文字以上で設定してください。", true);
+  if (password !== confirmation) return authMessage("確認用パスワードが一致しません。", true);
+  const submit = $("emailSignupSubmit");
+  submit.disabled = true;
+  try {
+    const { data, error } = await authClient.auth.signUp({ email, password });
+    if (error) throw error;
+    if (data.session && data.user) {
+      authUser = data.user;
+      paintAuthState();
+      authMessage("アカウントを作成しました。");
+    } else {
+      authMessage("登録処理は完了しましたが、メール確認が有効になっています。管理者がSupabaseのメール確認をOFFにする必要があります。", true);
+    }
+  } catch (error) {
+    authMessage(error.message || "アカウントを作成できませんでした。", true);
+  } finally { submit.disabled = false; }
+};
+setEmailAuthMode("login");
 
 $("profileAvatarFile").onchange = event => {
   const file = event.target.files?.[0];
