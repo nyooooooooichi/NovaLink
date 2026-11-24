@@ -204,7 +204,7 @@ let selectedRoomId = null;
 let roomRole = null;
 let lifeGameState = null;
 
-// Site-wide home lobby chat. Messages are kept in server memory (latest 60).
+// Site-wide lobby notifications use Web Push so they can arrive while NovaLink is closed.
 const lobbyNotifyKey = "novalink-lobby-notifications";
 let lobbyNotificationsEnabled = localStorage.getItem(lobbyNotifyKey) === "on";
 let lobbySeenInitialHistory = false;
@@ -230,65 +230,80 @@ function renderLobbyMessage(message) {
   time.textContent = formatLobbyTime(message.at);
   const body = document.createElement("p");
   body.textContent = message.text || "";
-  top.append(name, time);
-  row.append(top, body);
-  box.append(row);
+  top.append(name, time); row.append(top, body); box.append(row);
   while (box.children.length > 60) box.firstElementChild.remove();
   box.scrollTop = box.scrollHeight;
 }
 function updateLobbyNotifyButton() {
-  const button = $("lobbyNotifyBtn");
-  const hint = $("lobbyNotifyHint");
+  const button = $("lobbyNotifyBtn"), hint = $("lobbyNotifyHint");
   if (!button || !hint) return;
-  button.textContent = lobbyNotificationsEnabled ? "通知：ON" : "通知：OFF";
+  button.textContent = lobbyNotificationsEnabled ? "プッシュ通知：ON" : "プッシュ通知：OFF";
   button.classList.toggle("enabled", lobbyNotificationsEnabled);
   button.setAttribute("aria-pressed", String(lobbyNotificationsEnabled));
-  if (!("Notification" in window)) {
-    hint.textContent = "このブラウザはデスクトップ通知に対応していません。";
-  } else if (lobbyNotificationsEnabled && Notification.permission === "granted") {
-    hint.textContent = "通知ON：このサイトを開いていて、別タブ・別ウィンドウにいる間に新着をお知らせします。";
-  } else if (lobbyNotificationsEnabled && Notification.permission === "denied") {
-    hint.textContent = "ブラウザ側で通知がブロックされています。サイトの通知許可をブラウザ設定で変更してください。";
-  } else {
-    hint.textContent = "通知をONにすると、このサイトを別タブで開いている間の新着メッセージをお知らせします。";
-  }
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) hint.textContent = "このブラウザはWeb Push通知に対応していません。";
+  else if (lobbyNotificationsEnabled && Notification.permission === "granted") hint.textContent = "通知ON：NovaLinkを閉じていても新着通知を受け取れます。";
+  else if (Notification.permission === "denied") hint.textContent = "通知がブロックされています。ブラウザまたは端末の設定で許可してください。";
+  else hint.textContent = "通知をONにすると、サイトを閉じていてもホームチャットや通話ルームの通知が届きます。";
+}
+function base64UrlToUint8Array(value) {
+  const padding = "=".repeat((4 - value.length % 4) % 4);
+  const raw = atob((value + padding).replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from(raw, char => char.charCodeAt(0));
+}
+function registerPushSubscription(subscription) {
+  if (!subscription) return;
+  socket.emit("push:subscribe", { subscription: subscription.toJSON() }, result => {
+    if (!result?.ok) console.warn("Push registration failed:", result?.error);
+  });
+}
+async function restorePushSubscription() {
+  if (!lobbyNotificationsEnabled || !("serviceWorker" in navigator) || !("Notification" in window) || Notification.permission !== "granted") return;
+  try {
+    await navigator.serviceWorker.register("/sw.js");
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if (subscription) registerPushSubscription(subscription);
+  } catch (error) { console.warn("Push restore failed:", error); }
 }
 async function toggleLobbyNotifications() {
-  if (!lobbyNotificationsEnabled) {
-    if (!("Notification" in window)) {
-      toast("このブラウザは通知に対応していません。");
-      return;
-    }
-    if (Notification.permission === "denied") {
-      toast("ブラウザ設定でNovaLinkの通知を許可してください。");
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) return toast("このブラウザはプッシュ通知に対応していません。");
+  if (lobbyNotificationsEnabled) {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        socket.emit("push:unsubscribe", { endpoint: subscription.endpoint });
+        await subscription.unsubscribe();
+      }
+      lobbyNotificationsEnabled = false;
+      localStorage.setItem(lobbyNotifyKey, "off");
       updateLobbyNotifyButton();
-      return;
-    }
-    const permission = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
-    if (permission !== "granted") {
-      toast("通知は許可されませんでした。");
-      updateLobbyNotifyButton();
-      return;
-    }
-    lobbyNotificationsEnabled = true;
-  } else {
-    lobbyNotificationsEnabled = false;
+      toast("プッシュ通知をOFFにしました。");
+    } catch (_) { toast("通知を停止できませんでした。"); }
+    return;
   }
-  localStorage.setItem(lobbyNotifyKey, lobbyNotificationsEnabled ? "on" : "off");
-  updateLobbyNotifyButton();
-}
-function showLobbyNotification(message) {
-  if (!lobbyNotificationsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
-  if (document.visibilityState === "visible" && document.hasFocus()) return;
+  if (Notification.permission === "denied") return toast("端末またはブラウザの設定でNovaLinkの通知を許可してください。");
   try {
-    const notification = new Notification("NovaLink｜" + (message.name || "Guest"), {
-      body: message.text,
-      tag: "novalink-lobby-" + message.id,
-      icon: "/favicon.ico"
-    });
-    notification.onclick = () => { window.focus(); notification.close(); };
-  } catch (error) { console.warn("Lobby notification unavailable", error); }
+    const permission = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+    if (permission !== "granted") return toast("通知は許可されませんでした。");
+    const response = await fetch("/api/push/public-key");
+    const config = await response.json();
+    if (!response.ok || !config.publicKey) throw new Error(config.error || "通知サーバーの設定が未完了です。");
+    await navigator.serviceWorker.register("/sw.js");
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToUint8Array(config.publicKey) });
+    await new Promise((resolve, reject) => socket.emit("push:subscribe", { subscription: subscription.toJSON() }, result => result?.ok ? resolve() : reject(new Error(result?.error || "通知登録に失敗しました。"))));
+    lobbyNotificationsEnabled = true;
+    localStorage.setItem(lobbyNotifyKey, "on");
+    updateLobbyNotifyButton();
+    toast("プッシュ通知を有効にしました。");
+  } catch (error) {
+    console.error("Push setup failed:", error);
+    toast(error.message || "プッシュ通知の設定に失敗しました。");
+    updateLobbyNotifyButton();
+  }
 }
+socket.on("connect", restorePushSubscription);
 socket.on("lobby:history", messages => {
   const box = $("lobbyMessages");
   if (!box) return;
@@ -305,7 +320,7 @@ socket.on("lobby:history", messages => {
 });
 socket.on("lobby:message", message => {
   renderLobbyMessage(message);
-  if (message.senderId !== socket.id) showLobbyNotification(message);
+
 });
 $("lobbyForm").addEventListener("submit", event => {
   event.preventDefault();
@@ -408,6 +423,7 @@ function enterMeeting(result, name, role) {
   selfId = result.selfId;
   roomId = result.roomId;
   roomRole = role;
+  socket.emit("push:context", { roomId: result.roomId });
   lifeGameState = null;
   $("roomBrowser").classList.add("hidden");
   $("home").classList.add("hidden");
