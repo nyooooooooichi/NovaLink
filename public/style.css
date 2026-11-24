@@ -1176,3 +1176,63 @@ footer{color:#8c9bb1;border-top-color:#27354a}
     grid-template-columns:1fr;
   }
 }
+
+/* NOVALINK SETTINGS CONTROL CENTER */
+:root{--nova-accent:#83b5ff;--nova-brightness:1}
+.topbar,.topbar~main,.topbar~footer{filter:brightness(var(--nova-brightness))}
+.settings-open-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid #425a7c;background:linear-gradient(145deg,#172943,#101a2b);color:#d9e8ff;border-radius:10px;padding:9px 13px;font:600 12px inherit;cursor:pointer;box-shadow:inset 0 1px #ffffff12,0 5px 16px #0003;white-space:nowrap}
+.settings-open-btn:hover{border-color:var(--nova-accent);color:#fff;box-shadow:0 0 18px color-mix(in srgb,var(--nova-accent) 22%,transparent)}
+.settings-modal{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:18px}
+.settings-modal.hidden{display:none!important}
+.settings-backdrop{position:absolute;inset:0;background:rgba(2,6,14,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.settings-dialog{position:relative;z-index:1;width:min(760px,100%);max-height:min(88vh,900px);display:flex;flex-direction:column;overflow:hidden;border:1px solid #48658c;border-radius:22px;background:linear-gradient(150deg,#14233a,#0b1321 72%);box-shadow:0 30px 100px #000b,0 0 50px #4d8bd51a}
+.settings-header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:25px 27px 20px;border-bottom:1px solid #ffffff16;background:linear-gradient(110deg,#1c3555,#111c2e)}
+.settings-kicker{font-size:9px;letter-spacing:.22em;color:var(--nova-accent);font-weight:800}
+.settings-header h2{font-size:26px;letter-spacing:-.04em;margin:8px 0 5px;color:#f1f6ff}
+.settings-header p{font-size:11px;color:#9eafc7;margin:0}
+.settings-close{width:36px;height:36px;border:1px solid #ffffff24;border-radius:10px;background:#ffffff09;color:#dceaff;font-size:23px;cursor:pointer}
+.settings-content{overflow:auto;padding:8px 26px 24px;overscroll-behavior:contain}
+.settings-section{padding:20px 0;border-bottom:1px solid #ffffff13}
+.settings-section-title{display:flex;align-items:center;gap:13px;margin-bottom:12px}
+.settings-section-title>span{display:grid;place-items:center;width:35px;height:35px;border:1px solid color-mix(in srgb,var(--nova-accent) 45%,transparent);border-radius:11px;color:var(--nova-accent);background:color-mix(in srgb,var(--nova-accent) 10%,transparent);font-size:18px}
+.settings-section-title h3{font-size:14px;margin:0 0 4px;color:#e9f2ff}
+.settings-section-title p{font-size:10px;color:#8499b7;margin:0}
+.settings-row,.settings-toggle-row{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:13px 2px;border-top:1px solid #ffffff0b}
+.settings-row>span,.settings-toggle-row>span{display:flex;flex-direction:column;gap:4px;min-width:0}
+.settings-row b,.settings-toggle-row b,.settings-range-row b{font-size:12px;color:#dce8fa}
+.settings-row small,.settings-toggle-row small{font-size:10px;line-height:1.55;color:#8296b2}
+.settings-row select{flex:0 0 auto;min-width:142px;max-width:46%;border:1px solid #344b6b;border-radius:9px;padding:9px 30px 9px 10px;background:#0b1728;color:#e4efff;font-size:11px;outline:none}
+.settings-range-row{display:block;padding:14px 2px;border-top:1px solid #ffffff0b}
+.settings-range-row>span{display:flex;justify-content:space-between;align-items:center}
+.settings-range-row output{font-size:11px;color:var(--nova-accent);font-variant-numeric:tabular-nums}
+.settings-range-row input{width:100%;margin:14px 0 2px;accent-color:var(--nova-accent)}
+.settings-toggle-row input{width:42px;height:23px;flex:0 0 auto;appearance:none;border:1px solid #405574;border-radius:99px;background:#1b2a40;position:relative;cursor:pointer;transition:.2s}
+.settings-toggle-row input:before{content:"";position:absolute;width:15px;height:15px;left:3px;top:3px;border-radius:50%;background:#9aabc3;transition:.2s}
+.settings-toggle-row input:checked{background:#2b6191;border-color:var(--nova-accent)}
+.settings-toggle-row input:checked:before{transform:translateX(19px);background:#fff;box-shadow:0 0 9px var(--nova-accent)}
+.settings-update-link{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:15px;border:1px solid #3b5679;border-radius:12px;background:linear-gradient(110deg,#1a304d,#101d30);transition:.2s}
+.settings-update-link:hover{border-color:var(--nova-accent);transform:translateY(-1px)}
+.settings-update-link span{display:flex;flex-direction:column;gap:5px}
+.settings-update-link b{font-size:11px;letter-spacing:.12em;color:#e4f0ff}
+.settings-update-link small{font-size:10px;color:#91a7c5}
+.settings-update-link strong{font-size:10px;color:var(--nova-accent);white-space:nowrap}
+.settings-reset-btn{margin-top:14px;border:1px solid #624b50;background:#281c25;color:#d9aeb5;border-radius:9px;padding:9px 12px;font-size:10px;cursor:pointer}
+.settings-footer{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 26px;border-top:1px solid #ffffff16;background:#0b1422}
+.settings-footer span{font-size:10px;color:#8195b2}
+.settings-footer button{border:1px solid #75a8ed;background:linear-gradient(135deg,#315e96,#203b62);color:#f2f7ff;border-radius:10px;padding:10px 24px;font-size:11px;font-weight:700;cursor:pointer}
+body.nova-reduce-motion *,body.nova-reduce-motion *:before,body.nova-reduce-motion *:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+body.nova-performance-mode .ambient,body.nova-performance-mode .grid-plane,body.nova-performance-mode .orbit,body.nova-performance-mode .pointer-glow{display:none!important}
+body.nova-performance-mode .entry-card,body.nova-performance-mode .settings-dialog{box-shadow:none}
+@media(max-width:620px){
+ .settings-open-btn{padding:8px 9px;font-size:11px;gap:4px}
+ .settings-open-btn span{display:inline}
+ .settings-modal{padding:8px}
+ .settings-dialog{max-height:94dvh;border-radius:17px}
+ .settings-header{padding:20px 18px 16px}
+ .settings-header h2{font-size:22px}
+ .settings-content{padding:5px 17px 18px}
+ .settings-row,.settings-toggle-row{gap:10px}
+ .settings-row select{min-width:116px;font-size:10px;padding:9px 22px 9px 8px}
+ .settings-footer{padding:12px 17px}
+ .settings-footer span{max-width:65%;line-height:1.5}
+}
