@@ -575,6 +575,7 @@ function renderLifeGame() {
     $("lifeTurnLabel").textContent = "ホストがゲームを作成してください";
     create.hidden = roomRole !== "host";
     join.hidden = ready.hidden = start.hidden = roll.hidden = true;
+    $("lifeCpuAddBtn").hidden = $("lifeCpuRemoveBtn").hidden = $("lifeCpuCount").hidden = true;
     board.innerHTML = '<div class="life-board-empty">ホストがゲームを作成すると、人生の盤面が表示されます。</div>';
     playersBox.innerHTML = '<p class="life-muted">まだゲームに参加していません。</p>';
     $("lifeLog").innerHTML = '<p class="life-muted">ゲームの出来事がここに表示されます。</p>';
@@ -591,8 +592,16 @@ function renderLifeGame() {
   join.hidden = !(game.status === "lobby" && !me);
   ready.hidden = !(game.status === "lobby" && !!me);
   ready.textContent = me?.ready ? "準備を解除" : "準備OK";
-  start.hidden = !(game.status === "lobby" && isHost);
-  start.disabled = game.players.length < 2 || !game.players.every(player => player.ready);
+  const cpuCount = game.players.filter(player => player.isCpu).length;
+  const canManageCpu = game.status === "lobby" && isHost;
+  $("lifeCpuAddBtn").hidden = !canManageCpu;
+  $("lifeCpuRemoveBtn").hidden = !canManageCpu;
+  $("lifeCpuCount").hidden = !canManageCpu;
+  $("lifeCpuAddBtn").disabled = cpuCount >= 4;
+  $("lifeCpuRemoveBtn").disabled = cpuCount === 0;
+  $("lifeCpuCount").textContent = "CPU " + cpuCount + " / 4";
+  start.hidden = !canManageCpu;
+  start.disabled = game.players.length < 2 || !game.players.every(player => player.isCpu || player.ready);
   roll.hidden = !(game.status === "playing" && me && active?.id === selfId && !game.currentEvent);
   board.innerHTML = "";
   const boardColumns = window.matchMedia("(max-width: 620px)").matches ? 4 : 8;
@@ -623,8 +632,8 @@ function renderLifeGame() {
     card.className = "life-player-card" + (active?.id === player.id && game.status === "playing" ? " is-active" : "");
     const avatar = document.createElement("span"); avatar.className = "life-player-avatar life-token-" + (index % 10); avatar.textContent = player.name.slice(0,1);
     const info = document.createElement("div"); info.className = "life-player-info";
-    const name = document.createElement("strong"); name.textContent = player.name + (player.id === game.hostId ? " · HOST" : "");
-    const meta = document.createElement("small"); meta.textContent = player.career + " · " + (game.status === "lobby" ? (player.ready ? "準備完了" : "準備中") : "マス " + player.position + (player.finished ? " · GOAL" : ""));
+    const name = document.createElement("strong"); name.textContent = player.name + (player.id === game.hostId ? " · HOST" : player.isCpu ? " · CPU" : "");
+    const meta = document.createElement("small"); meta.textContent = player.career + " · " + (game.status === "lobby" ? (player.isCpu ? "自動プレイヤー" : player.ready ? "準備完了" : "準備中") : "マス " + player.position + (player.finished ? " · GOAL" : ""));
     info.append(name,meta);
     const cash = document.createElement("b"); cash.className = "life-cash"; cash.textContent = lifeMoney(player.cash);
     card.append(avatar,info,cash); playersBox.append(card);
@@ -662,6 +671,8 @@ $("lifeReadyBtn").onclick = () => {
   const me = lifeGameState?.players.find(player => player.id === selfId);
   lifeRequest("life:ready", { ready: !me?.ready });
 };
+$("lifeCpuAddBtn").onclick = () => lifeRequest("life:cpu:add");
+$("lifeCpuRemoveBtn").onclick = () => lifeRequest("life:cpu:remove");
 $("lifeStartBtn").onclick = () => lifeRequest("life:start");
 $("lifeRollBtn").onclick = () => lifeRequest("life:roll");
 socket.on("signal", async ({ from, data }) => {
