@@ -374,3 +374,11 @@ footer{color:#8c9bb1;border-top-color:#27354a}
 @keyframes lifeRollHint{50%{box-shadow:0 0 0 5px #e8b45118,0 8px 28px #d69b3c55}}
 @media(max-width:620px){.life-now-panel{gap:10px;padding:12px}.life-now-icon{width:38px;height:38px;font-size:19px}.life-now-copy strong{font-size:14px}.life-now-copy p{font-size:10px}.life-dice-stage{width:55px}.life-dice-stage>span{font-size:27px}}
 @media(prefers-reduced-motion:reduce){.life-now-panel:after,.life-tile.is-current-tile,.life-dice-stage.rolling>span,.life-action.roll{animation:none}}
+
+/* Physical-feeling board movement */
+.life-moving-token{position:fixed;z-index:100000;width:34px;height:34px;display:grid;place-items:center;border-radius:50%;border:2px solid #fff;background:linear-gradient(145deg,#6ee7f5,#2867a8);color:#07172c;font-size:13px;font-weight:1000;box-shadow:0 0 0 5px #75e7ff35,0 0 25px #65dcff,0 9px 18px #0008;pointer-events:none;will-change:transform}
+.life-moving-token:after{content:"";position:absolute;inset:-7px;border:1px solid #a6f4ff88;border-radius:50%;animation:lifeTokenTrail .42s ease-out infinite}
+@keyframes lifeTokenTrail{from{transform:scale(.72);opacity:.9}to{transform:scale(1.45);opacity:0}}
+.life-tokens .life-token{transition:transform .2s ease,filter .2s ease}
+.life-dice-stage.rolling>span{animation:lifeDiceTumble .72s cubic-bezier(.2,.8,.3,1)}
+@keyframes lifeDiceTumble{0%{transform:translateY(0) rotate(0) scale(.8);filter:blur(1px)}20%{transform:translateY(-12px) rotate(110deg) scale(1.2)}42%{transform:translateY(3px) rotate(270deg) scale(.95)}63%{transform:translateY(-7px) rotate(440deg) scale(1.1)}82%{transform:translateY(1px) rotate(620deg)}100%{transform:translateY(0) rotate(720deg) scale(1);filter:none}}
