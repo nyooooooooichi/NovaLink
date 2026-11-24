@@ -3,6 +3,7 @@ const http = require("http");
 const crypto = require("crypto");
 const { promisify } = require("util");
 const { Server } = require("socket.io");
+const webpush = require("web-push");
 
 const scrypt = promisify(crypto.scrypt);
 const app = express();
@@ -211,9 +212,34 @@ app.get("/config.js", (_req, res) => {
 });
 app.use(express.static(require("path").join(__dirname, "public")));
 app.get("/health", (_req, res) => res.json({ ok: true, app: "NovaLink" }));
+app.get("/api/push/public-key", (_req, res) => {
+  if (!vapidPublicKey || !vapidPrivateKey) return res.status(503).json({ ok: false, error: "Push notifications are not configured." });
+  res.json({ ok: true, publicKey: vapidPublicKey });
+});
 
 // Room passwords are salted and hashed on the server; plaintext passwords are never stored.
 const rooms = new Map();
+const pushSubscriptions = new Map();
+const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "";
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "";
+if (vapidPublicKey && vapidPrivateKey) {
+  webpush.setVapidDetails(process.env.VAPID_SUBJECT || "https://novalink-tnfy.onrender.com/", vapidPublicKey, vapidPrivateKey);
+}
+async function sendPushNotification(record, payload) {
+  if (!vapidPublicKey || !vapidPrivateKey) return;
+  try {
+    await webpush.sendNotification(record.subscription, JSON.stringify(payload));
+  } catch (error) {
+    if (error.statusCode === 404 || error.statusCode === 410) pushSubscriptions.delete(record.subscription.endpoint);
+    else console.warn("Web Push delivery failed:", error.statusCode || error.message);
+  }
+}
+function notifyPush(payload, predicate = () => true, excludeSocketId = null) {
+  if (!vapidPublicKey || !vapidPrivateKey) return;
+  for (const record of pushSubscriptions.values()) {
+    if (record.socketId !== excludeSocketId && predicate(record)) sendPushNotification(record, payload);
+  }
+}
 const lobbyMessages = [];
 const LOBBY_HISTORY_LIMIT = 60;
 const lastLobbyMessageAt = new Map();
@@ -248,6 +274,7 @@ function enterRoom(socket, roomId, name, role, reply) {
   socket.data.roomId = roomId;
   socket.data.name = name;
   socket.data.role = role;
+  for (const record of pushSubscriptions.values()) if (record.socketId === socket.id) record.roomId = roomId;
   const peers = roomMembers(roomId).filter(id => id !== socket.id).map(id => ({
     id, name: io.sockets.sockets.get(id)?.data.name || "Guest",
     role: io.sockets.sockets.get(id)?.data.role || "guest"
@@ -255,6 +282,7 @@ function enterRoom(socket, roomId, name, role, reply) {
   reply({ ok: true, roomId, roomName: room.name, peers, selfId: socket.id });
   if (room.lifeGame) socket.emit("life:state", lifeSnapshot(room.lifeGame));
   socket.to(roomId).emit("peer:joined", { id: socket.id, name, role });
+  notifyPush({ title: "NovaLink｜参加者が入室", body: name + " が通話ルームに参加しました。", url: "/" }, record => record.roomId === roomId, socket.id);
   io.to(roomId).emit("room:count", room.members.size);
   broadcastRoomList();
 }
@@ -315,8 +343,26 @@ io.on("connection", socket => {
     lobbyMessages.push(item);
     if (lobbyMessages.length > LOBBY_HISTORY_LIMIT) lobbyMessages.shift();
     io.emit("lobby:message", item);
+    notifyPush({ title: "NovaLink｜" + displayName, body: message, url: "/" }, record => !record.roomId, socket.id);
   });
 
+  socket.on("push:subscribe", ({ subscription } = {}, reply = () => {}) => {
+    if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) return reply({ ok: false, error: "通知登録情報が正しくありません。" });
+    if (!vapidPublicKey || !vapidPrivateKey) return reply({ ok: false, error: "サーバーの通知設定がまだ完了していません。" });
+    pushSubscriptions.set(subscription.endpoint, { subscription, socketId: socket.id, roomId: socket.data.roomId || null });
+    socket.data.pushEndpoint = subscription.endpoint;
+    reply({ ok: true });
+  });
+  socket.on("push:context", ({ roomId: targetRoomId } = {}) => {
+    const record = socket.data.pushEndpoint ? pushSubscriptions.get(socket.data.pushEndpoint) : null;
+    if (record) record.roomId = targetRoomId && rooms.has(targetRoomId) ? targetRoomId : null;
+  });
+  socket.on("push:unsubscribe", ({ endpoint } = {}, reply = () => {}) => {
+    const target = endpoint || socket.data.pushEndpoint;
+    if (target) pushSubscriptions.delete(target);
+    socket.data.pushEndpoint = null;
+    reply({ ok: true });
+  });
   socket.on("room:list", (_data, reply = () => {}) => reply({ ok: true, rooms: publicRoomList() }));
 
   socket.on("room:create", async ({ roomName, password, name } = {}, reply = () => {}) => {
@@ -485,6 +531,7 @@ io.on("connection", socket => {
     io.to(socket.data.roomId).emit("chat:message", {
       id: socket.id, name: socket.data.name || "Guest", text: message, at: Date.now()
     });
+    notifyPush({ title: "NovaLink｜" + (socket.data.name || "Guest"), body: message, url: "/" }, record => record.roomId === socket.data.roomId, socket.id);
   });
   socket.on("disconnect", () => { lastLobbyMessageAt.delete(socket.id); leaveRoom(socket); });
 });
