@@ -1062,22 +1062,33 @@ socket.on("room:closed", ({ message } = {}) => {
 });
 
 
-// Premium interface motion: pointer light and cinematic intro.
+// Full-screen NovaLink cinematic boot sequence.
 window.addEventListener("DOMContentLoaded", () => {
   initAuth();
   const boot = $("bootScreen");
   if (boot) {
     boot.classList.add("sequence-start");
     const status = $("bootStatus");
+    const percent = $("bootPercent");
+    const fill = $("bootProgressFill");
+    const steps = boot.querySelectorAll(".boot-progress-steps span");
+    const updateBoot = (message, value, activeStep) => {
+      if (status) status.textContent = message;
+      if (percent) percent.textContent = String(value).padStart(2, "0") + "%";
+      if (fill) fill.style.width = value + "%";
+      steps.forEach((step, index) => step.classList.toggle("active", index <= activeStep));
+    };
+    updateBoot("POWERING NOVA CORE", 12, 0);
+    window.setTimeout(() => updateBoot("SYNCHRONIZING NETWORK", 38, 1), 900);
     window.setTimeout(() => {
       boot.classList.add("sequence-lock");
-      if (status) status.textContent = "SECURE CHANNEL ESTABLISHED";
-    }, 1050);
+      updateBoot("SECURE CHANNEL ESTABLISHED", 72, 2);
+    }, 1850);
     window.setTimeout(() => {
       boot.classList.add("sequence-launch");
-      if (status) status.textContent = "WELCOME TO NOVALINK";
-    }, 1650);
-    window.setTimeout(() => boot.classList.add("done"), 2450);
+      updateBoot("WELCOME TO NOVALINK", 100, 2);
+    }, 2850);
+    window.setTimeout(() => boot.classList.add("done"), 3850);
   }
   const glow = $("pointerGlow");
   if (glow && matchMedia("(pointer:fine)").matches) {
