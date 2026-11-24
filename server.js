@@ -323,15 +323,21 @@ io.on("connection", socket => {
     roomName = String(roomName || "").trim().slice(0, 40);
     password = String(password || "");
     name = String(name || "Host").trim().slice(0, 24) || "Host";
-    if (!roomName) return reply({ ok: false, error: "部屋名を入力してください。" });
     if (password.length < 4 || password.length > 64) return reply({ ok: false, error: "パスワードは4〜64文字で設定してください。" });
     if (socket.data.roomId) leaveRoom(socket);
     let roomId;
     do { roomId = crypto.randomBytes(5).toString("hex").toUpperCase(); } while (rooms.has(roomId));
     try {
       const credentials = await hashPassword(password);
+      let finalRoomName = roomName;
+      if (!finalRoomName) {
+        const occupiedNames = new Set([...rooms.values()].map(room => room.name));
+        let number = 1;
+        while (occupiedNames.has("NOVA会議" + number)) number += 1;
+        finalRoomName = "NOVA会議" + number;
+      }
       rooms.set(roomId, {
-        id: roomId, name: roomName, members: new Set(), createdAt: Date.now(),
+        id: roomId, name: finalRoomName, members: new Set(), createdAt: Date.now(),
         passwordSalt: credentials.salt, passwordHash: credentials.hash, lifeGame: null, lifeCpuTimer: null
       });
       enterRoom(socket, roomId, name, "host", reply);
