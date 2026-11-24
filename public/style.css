@@ -346,3 +346,7 @@ footer{color:#8c9bb1;border-top-color:#27354a}
 .life-footnote{margin:12px 0 0;color:#71839e;font-size:9px;line-height:1.6}
 @media(max-width:900px){.life-layout{grid-template-columns:1fr}.life-sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}.life-side-card:first-child{grid-column:1/-1}}
 @media(max-width:620px){.life-game-header{align-items:flex-start}.life-toolbar{align-items:flex-start;flex-direction:column}.life-toolbar-actions{width:100%;justify-content:flex-start}.life-action{flex:1}.life-board{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:8px}.life-tile{min-height:72px;padding:6px}.life-tile>strong{font-size:8px}.life-sidebar{grid-template-columns:1fr}.life-side-card:first-child{grid-column:auto}}
+
+.life-action.cpu-action{border-color:#6d68a7;background:linear-gradient(120deg,#29284c,#202c48);color:#dcd8ff}
+.life-cpu-count{align-self:center;padding:7px 9px;border:1px solid #4b5478;border-radius:8px;color:#c5c4f3;font-size:9px;font-weight:800;letter-spacing:.5px}
+.life-action.cpu-action:disabled{opacity:.35;cursor:not-allowed}
