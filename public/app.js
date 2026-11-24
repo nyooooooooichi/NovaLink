@@ -586,7 +586,9 @@ function renderLifeGame() {
   const active = game.players[game.turnIndex];
   const isHost = game.hostId === selfId;
   $("lifeStatus").textContent = game.status === "lobby" ? "参加者募集中" : game.status === "playing" ? "ゲーム進行中" : "ゲーム終了";
-  $("lifeTurnLabel").textContent = game.status === "lobby" ? game.players.length + " / 10 人参加中" :
+  const humanCount = game.players.filter(player => !player.isCpu).length;
+  const cpuCountForLabel = game.players.filter(player => player.isCpu).length;
+  $("lifeTurnLabel").textContent = game.status === "lobby" ? "人間 " + humanCount + "人 · CPU " + cpuCountForLabel + "人" :
     game.status === "playing" ? "第" + game.turnNumber + "ターン · " + (active?.name || "—") + " の番" : "最終結果が確定しました";
   create.hidden = true;
   join.hidden = !(game.status === "lobby" && !me);
