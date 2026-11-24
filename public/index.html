@@ -27,12 +27,49 @@
     </section>
 
     <section class="meeting hidden" id="meeting">
-      <div class="meeting-head"><div><div class="eyebrow"><span></span> LIVE SESSION</div><h2 id="meetingTitle">ミーティング</h2><p id="roomLabel"></p></div><div class="count-pill"><span class="live-dot"></span><strong id="memberCount">1</strong> / 10</div></div>
-      <div class="meeting-layout"><div class="video-area"><div class="video-grid" id="videoGrid"><div class="video-tile self-tile" id="selfTile"><video id="localVideo" autoplay playsinline muted></video><span class="video-name">あなた</span></div></div><div class="controls"><button id="micBtn" class="control-btn active">🎙 <span>マイク</span></button><button id="cameraBtn" class="control-btn active">▣ <span>カメラ</span></button><button id="shareBtn" class="control-btn">▧ <span>画面共有</span></button><button id="stopShareBtn" class="control-btn danger hidden">■ <span>共有を終了</span></button><button id="copyBtn" class="control-btn">↗ <span>招待</span></button><button id="leaveBtn" class="control-btn danger">✕ <span>退出</span></button></div></div>
-      <aside class="chat-panel"><div class="chat-heading">ROOM CHAT <span>● LIVE</span></div><div id="chatMessages" class="chat-messages"><div class="system-message">メッセージで会話を始めましょう。</div></div><form id="chatForm" class="chat-form"><input id="chatInput" maxlength="1000" placeholder="メッセージを入力..." autocomplete="off"><button aria-label="送信">↑</button></form></aside></div>
+      <div class="meeting-head"><div><div class="eyebrow"><span></span> LIVE SESSION</div><h2 id="meetingTitle">ミーティング</h2><p id="roomLabel"></p></div><div class="meeting-meta"><span class="connection-pill" id="connectionStatus">接続準備中</span><div class="count-pill"><span class="live-dot"></span><strong id="memberCount">1</strong> / 10</div></div></div>
+      <div class="participant-bar"><span class="participant-title">参加者</span><div id="participantList" class="participant-list" data-self="Guest"></div></div>
+      <div class="meeting-layout">
+        <div class="video-area">
+          <div class="video-grid" id="videoGrid">
+            <div class="video-tile self-tile" id="selfTile"><video id="localVideo" autoplay playsinline muted></video><span class="video-name" id="selfName">あなた</span><button class="tile-expand" id="selfFullscreen" title="全画面表示">⛶</button></div>
+          </div>
+          <div class="controls">
+            <button id="micBtn" class="control-btn active">🎙 <span>マイク</span></button>
+            <button id="cameraBtn" class="control-btn active">▣ <span>カメラ</span></button>
+            <button id="backgroundToggle" class="control-btn">✦ <span>背景</span></button>
+            <button id="shareBtn" class="control-btn">▧ <span>画面共有</span></button>
+            <button id="stopShareBtn" class="control-btn danger hidden">■ <span>共有を終了</span></button>
+            <button id="copyBtn" class="control-btn">↗ <span>招待</span></button>
+            <button id="themeBtn" class="control-btn">☀ ライト</button>
+            <button id="leaveBtn" class="control-btn danger">✕ <span>退出</span></button>
+          </div>
+          <section id="backgroundPanel" class="background-panel hidden">
+            <div class="panel-heading"><div><strong>バーチャル背景</strong><small id="backgroundStatus">オフ</small></div><span>背景処理はこの端末内で実行されます</span></div>
+            <div class="background-options">
+              <button class="background-choice selected" data-bg="none"><span class="bg-preview bg-none">OFF</span><b>オフ</b></button>
+              <button class="background-choice" data-bg="blur"><span class="bg-preview bg-blur"></span><b>ぼかし</b></button>
+              <button class="background-choice" data-bg="aurora"><span class="bg-preview bg-aurora"></span><b>オーロラ</b></button>
+              <button class="background-choice" data-bg="sunset"><span class="bg-preview bg-sunset"></span><b>サンセット</b></button>
+              <button class="background-choice" data-bg="studio"><span class="bg-preview bg-studio"></span><b>スタジオ</b></button>
+              <button class="background-choice" data-bg="forest"><span class="bg-preview bg-forest"></span><b>フォレスト</b></button>
+              <button class="background-choice upload-choice" id="uploadBackgroundBtn"><span class="bg-preview bg-upload">＋</span><b>画像を追加</b></button>
+              <input id="backgroundUpload" type="file" accept="image/*" hidden>
+            </div>
+          </section>
+        </div>
+        <aside class="chat-panel">
+          <div class="chat-heading">ROOM CHAT <span>● LIVE</span></div>
+          <div id="chatMessages" class="chat-messages"><div class="system-message">メッセージで会話を始めましょう。</div></div>
+          <div class="emoji-bar"><button data-emoji="😀">😀</button><button data-emoji="😂">😂</button><button data-emoji="👍">👍</button><button data-emoji="❤️">❤️</button><button data-emoji="🎉">🎉</button></div>
+          <form id="chatForm" class="chat-form"><input id="chatInput" maxlength="1000" placeholder="メッセージを入力..." autocomplete="off"><button aria-label="送信">↑</button></form>
+        </aside>
+      </div>
     </section>
   </main>
   <footer><span>© 2026 NovaLink</span><span>MADE FOR MEANINGFUL CONNECTIONS</span></footer>
   <div id="toast" class="toast" role="status"></div>
+  <video id="cameraSource" autoplay playsinline muted class="source-video"></video>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
   <script src="/socket.io/socket.io.js"></script><script src="/app.js"></script>
 </body></html>
