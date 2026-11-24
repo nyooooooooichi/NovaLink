@@ -624,7 +624,35 @@ async function makePeer(id, name, initiator) {
   peers.get(id).screenSender = screenTransceiver.sender;
   if (screenStream?.getVideoTracks()[0]) await screenTransceiver.sender.replaceTrack(screenStream.getVideoTracks()[0]);
   pc.onicecandidate = e => { if (e.candidate) socket.emit("signal", { to: id, data: { candidate: e.candidate } }); };
-  pc.ontrack = e => addVideo(id, name, e.streams[0], e.transceiver === screenTransceiver);
+  pc.ontrack = e => {
+    const track = e.track;
+    const incomingStream = e.streams?.[0] || new MediaStream([track]);
+
+    // Audio and video are sent as separate streams. Never let an audio-only
+    // stream replace the camera video element (especially on iOS Safari).
+    if (track.kind === "audio") {
+      const peer = peers.get(id);
+      if (!peer) return;
+      if (!peer.audio) {
+        const audio = document.createElement("audio");
+        audio.autoplay = true;
+        audio.setAttribute("autoplay", "");
+        audio.setAttribute("playsinline", "");
+        audio.style.display = "none";
+        document.body.append(audio);
+        peer.audio = audio;
+      }
+      peer.audio.srcObject = incomingStream;
+      peer.audio.play().catch(error => {
+        console.warn("Remote audio playback needs user interaction:", error);
+      });
+      return;
+    }
+
+    if (track.kind === "video") {
+      addVideo(id, name, incomingStream, e.transceiver === screenTransceiver);
+    }
+  };
   pc.onconnectionstatechange = () => {
     const state = pc.connectionState;
     if (["failed", "closed"].includes(state)) removePeer(id);
@@ -641,15 +669,41 @@ function addVideo(id, name, stream, isScreen = false) {
   let tile = document.getElementById("tile-" + id);
   if (!tile) {
     tile = document.createElement("div"); tile.className = "video-tile"; tile.id = "tile-" + id;
-    const camera = document.createElement("video"); camera.className = "camera-feed"; camera.autoplay = true; camera.playsInline = true;
-    const screen = document.createElement("video"); screen.className = "screen-feed"; screen.autoplay = true; screen.playsInline = true;
+    const camera = document.createElement("video");
+    camera.className = "camera-feed";
+    camera.autoplay = true;
+    camera.muted = true;
+    camera.playsInline = true;
+    camera.setAttribute("autoplay", "");
+    camera.setAttribute("muted", "");
+    camera.setAttribute("playsinline", "");
+    const screen = document.createElement("video");
+    screen.className = "screen-feed";
+    screen.autoplay = true;
+    screen.muted = true;
+    screen.playsInline = true;
+    screen.setAttribute("autoplay", "");
+    screen.setAttribute("muted", "");
+    screen.setAttribute("playsinline", "");
     tile.append(camera, screen);
     const label = document.createElement("span"); label.className = "video-name"; label.textContent = name; tile.append(label);
     const expand = document.createElement("button"); expand.className = "tile-expand"; expand.textContent = "⛶"; expand.title = "全画面表示";
     expand.onclick = () => toggleFullscreen(tile); tile.append(expand);
     $("videoGrid").append(tile);
   }
-  tile.querySelector(isScreen ? ".screen-feed" : ".camera-feed").srcObject = stream;
+  const video = tile.querySelector(isScreen ? ".screen-feed" : ".camera-feed");
+  video.muted = true;
+  video.autoplay = true;
+  video.playsInline = true;
+  video.setAttribute("muted", "");
+  video.setAttribute("autoplay", "");
+  video.setAttribute("playsinline", "");
+  video.srcObject = stream;
+  const startPlayback = () => video.play().catch(error => {
+    console.warn("Remote video playback deferred:", error);
+  });
+  if (video.readyState >= HTMLMediaElement.HAVE_METADATA) startPlayback();
+  else video.addEventListener("loadedmetadata", startPlayback, { once: true });
   if (isScreen) tile.classList.add("has-screen");
 }
 function toggleFullscreen(element) {
@@ -658,8 +712,17 @@ function toggleFullscreen(element) {
 }
 $("selfFullscreen").onclick = () => toggleFullscreen($("selfTile"));
 function removePeer(id) {
-  const peer = peers.get(id); if (peer) peer.pc.close();
-  peers.delete(id); document.getElementById("tile-" + id)?.remove();
+  const peer = peers.get(id);
+  if (peer) {
+    peer.pc.close();
+    if (peer.audio) {
+      peer.audio.pause();
+      peer.audio.srcObject = null;
+      peer.audio.remove();
+    }
+  }
+  peers.delete(id);
+  document.getElementById("tile-" + id)?.remove();
   renderParticipants();
 }
 function updateParticipants(selfName, list) {
