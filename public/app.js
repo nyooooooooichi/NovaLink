@@ -724,17 +724,27 @@ async function makePeer(id, name, initiator) {
     if (track.kind === "audio") {
       const peer = peers.get(id);
       if (!peer) return;
-      if (!peer.audio) {
-        const audio = document.createElement("audio");
+      // A peer can send both microphone audio and captured screen audio.
+      // Keep one playback element per remote audio track so they never overwrite.
+      if (!peer.audioElements) peer.audioElements = new Map();
+      let audio = peer.audioElements.get(track.id);
+      if (!audio) {
+        audio = document.createElement("audio");
         audio.autoplay = true;
         audio.setAttribute("autoplay", "");
         audio.setAttribute("playsinline", "");
         audio.style.display = "none";
         document.body.append(audio);
-        peer.audio = audio;
+        peer.audioElements.set(track.id, audio);
+        track.addEventListener("ended", () => {
+          audio.pause();
+          audio.srcObject = null;
+          audio.remove();
+          peer.audioElements?.delete(track.id);
+        }, { once: true });
       }
-      peer.audio.srcObject = incomingStream;
-      peer.audio.play().catch(error => {
+      audio.srcObject = incomingStream;
+      audio.play().catch(error => {
         console.warn("Remote audio playback needs user interaction:", error);
       });
       return;
@@ -826,6 +836,12 @@ function removePeer(id) {
   const peer = peers.get(id);
   if (peer) {
     peer.pc.close();
+    peer.audioElements?.forEach(audio => {
+      audio.pause();
+      audio.srcObject = null;
+      audio.remove();
+    });
+    peer.audioElements?.clear();
     if (peer.audio) {
       peer.audio.pause();
       peer.audio.srcObject = null;
