@@ -42,7 +42,7 @@
     </div>
     <div class="boot-bottom"><span>CONNECT. AND GO BEYOND.</span><i></i><span>ALL SYSTEMS / <b>STANDBY</b></span></div><div class="boot-launch-flash" aria-hidden="true"></div>
   </div>
-<header class="topbar"><a class="brand" href="/"><span class="brand-mark">N</span><span>Nova<span class="brand-light">Link</span></span></a><nav class="main-nav" aria-label="メインナビゲーション"><button type="button" class="main-nav-btn active" id="callHomeNav">通話ホーム</button><button type="button" class="main-nav-btn" id="communityNav">ホームチャット</button></nav><div class="account-actions"><span id="accountIdentity" class="account-identity hidden"></span><button id="accountBtn" class="account-btn" type="button">ログイン / 登録</button></div><span class="top-note"><i></i> NEXT GENERATION COMMUNICATION <b>● ONLINE</b></span></header>
+<header class="topbar"><a class="brand" href="/"><span class="brand-mark">N</span><span>Nova<span class="brand-light">Link</span></span></a><nav class="main-nav" aria-label="メインナビゲーション"><button type="button" class="main-nav-btn active" id="callHomeNav">通話ホーム</button><button type="button" class="main-nav-btn" id="communityNav">ホームチャット</button></nav><div class="account-actions"><button id="settingsOpenBtn" class="settings-open-btn" type="button" aria-haspopup="dialog" aria-controls="settingsModal" aria-label="設定を開く">⚙ <span>設定</span></button><span id="accountIdentity" class="account-identity hidden"></span><button id="accountBtn" class="account-btn" type="button">ログイン / 登録</button></div><span class="top-note"><i></i> NEXT GENERATION COMMUNICATION <b>● ONLINE</b></span></header>
   <main>
     <section class="hero" id="home">
       <div class="eyebrow"><span></span> THE FUTURE OF CONNECTION <b> / 01</b></div>
@@ -183,6 +183,40 @@
       </section>
     </section>
   </main>
+
+  <section id="settingsModal" class="settings-modal hidden" aria-hidden="true">
+    <div class="settings-backdrop" data-settings-close></div>
+    <div class="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <header class="settings-header"><div><div class="settings-kicker">NOVALINK CONTROL CENTER</div><h2 id="settingsTitle">システム設定</h2><p>NovaLinkの表示・映像・音声・操作をカスタマイズ。</p></div><button id="settingsCloseBtn" class="settings-close" type="button" aria-label="設定を閉じる">×</button></header>
+      <div class="settings-content">
+        <section class="settings-section"><div class="settings-section-title"><span>◈</span><div><h3>映像・パフォーマンス</h3><p>通話中のカメラ品質と描画負荷を調整します。</p></div></div>
+          <label class="settings-row"><span><b>カメラFPS</b><small>カメラ映像のフレームレート上限。端末性能により実際の値は変わります。</small></span><select id="settingFps"><option value="24">24 FPS</option><option value="30">30 FPS</option><option value="60">60 FPS</option></select></label>
+          <label class="settings-row"><span><b>カメラ解像度</b><small>高解像度ほど通信量・端末負荷が増加します。</small></span><select id="settingResolution"><option value="720">HD 720p</option><option value="1080">Full HD 1080p</option></select></label>
+          <label class="settings-row"><span><b>描画モード</b><small>画面演出を抑えて動作を軽くします。</small></span><select id="settingRenderMode"><option value="auto">自動</option><option value="quality">高品質</option><option value="performance">軽量</option></select></label>
+        </section>
+        <section class="settings-section"><div class="settings-section-title"><span>◉</span><div><h3>画面・外観</h3><p>見やすさや画面の雰囲気を調整します。</p></div></div>
+          <label class="settings-range-row"><span><b>画面の明るさ</b><output id="brightnessValue">100%</output></span><input id="settingBrightness" type="range" min="70" max="120" step="5" value="100"></label>
+          <label class="settings-row"><span><b>インターフェースサイズ</b><small>画面全体の文字・UIサイズを変更します。</small></span><select id="settingUiScale"><option value="0.9">小さめ</option><option value="1">標準</option><option value="1.1">大きめ</option><option value="1.2">最大</option></select></label>
+          <label class="settings-row"><span><b>アクセントカラー</b><small>ボタンや強調表示の色。</small></span><select id="settingAccent"><option value="blue">NOVA BLUE</option><option value="cyan">CYBER CYAN</option><option value="violet">NEBULA VIOLET</option><option value="green">MATRIX GREEN</option></select></label>
+          <label class="settings-toggle-row"><span><b>モーションを減らす</b><small>アニメーションや画面効果を抑えます。</small></span><input id="settingReduceMotion" type="checkbox"></label>
+        </section>
+        <section class="settings-section"><div class="settings-section-title"><span>♫</span><div><h3>サウンド</h3><p>NovaLinkの起動サウンドを調整します。</p></div></div>
+          <label class="settings-range-row"><span><b>起動サウンド音量</b><output id="volumeValue">70%</output></span><input id="settingVolume" type="range" min="0" max="100" step="5" value="70"></label>
+          <label class="settings-toggle-row"><span><b>起動サウンド</b><small>次回の起動演出からサウンドを再生します。</small></span><input id="settingBootSound" type="checkbox" checked></label>
+        </section>
+        <section class="settings-section"><div class="settings-section-title"><span>⌁</span><div><h3>マイク・通話</h3><p>マイク入力時の音声処理を調整します。</p></div></div>
+          <label class="settings-toggle-row"><span><b>ノイズ抑制・エコーキャンセル</b><small>周囲の雑音やスピーカー音の回り込みを軽減します。</small></span><input id="settingNoise" type="checkbox" checked></label>
+          <label class="settings-toggle-row"><span><b>マイク音量の自動調整</b><small>入力レベルを自動で調整します。</small></span><input id="settingAutoGain" type="checkbox" checked></label>
+        </section>
+        <section class="settings-section settings-about"><div class="settings-section-title"><span>↗</span><div><h3>NovaLinkについて</h3><p>更新情報・変更履歴・新機能のお知らせ。</p></div></div>
+          <a class="settings-update-link" href="/updates/" target="_blank" rel="noopener"><span><b>UPDATE CENTER</b><small>公式パッチノート・アップデート履歴を見る</small></span><strong>開く ↗</strong></a>
+          <button id="settingsResetBtn" class="settings-reset-btn" type="button">設定を初期状態に戻す</button>
+        </section>
+      </div>
+      <footer class="settings-footer"><span id="settingsSaveState">設定はこの端末に保存されます。</span><button id="settingsDoneBtn" type="button">完了</button></footer>
+    </div>
+  </section>
+
   <section id="authModal" class="auth-modal hidden" aria-hidden="true">
     <div class="auth-backdrop" data-auth-close></div>
     <div class="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="authTitle">
