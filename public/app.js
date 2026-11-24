@@ -597,6 +597,9 @@ function renderLifeGame() {
   board.innerHTML = "";
   game.board.forEach(tile => {
     const cell = document.createElement("div");
+    const row = Math.floor(tile.id / 8), column = tile.id % 8;
+    cell.style.gridRow = String(row + 1);
+    cell.style.gridColumn = String(row % 2 === 0 ? column + 1 : 8 - column);
     cell.className = "life-tile life-tile-" + tile.type;
     const number = document.createElement("small"); number.textContent = tile.id === 0 ? "START" : tile.id === game.board.length - 1 ? "GOAL" : String(tile.id).padStart(2,"0");
     const title = document.createElement("strong"); title.textContent = tile.title;
