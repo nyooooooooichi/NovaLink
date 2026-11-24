@@ -10,6 +10,134 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 const PORT = process.env.PORT || 3000;
 const MAX_PEERS = 10;
+const LIFE_BOARD_LENGTH = 48;
+const LIFE_START_CASH = 1000000;
+const LIFE_TILE_TYPES = ["salary","event","bonus","expense","choice","career","event","bonus","salary","investment","event","expense"];
+function makeLifeBoard() {
+  const names = {
+    salary: ["給料日","ボーナス査定","臨時収入"],
+    event: ["思いがけない出来事","人生の転機","休日のイベント"],
+    bonus: ["ラッキー！","臨時ボーナス","幸運到来"],
+    expense: ["突然の出費","税金","修理費"],
+    choice: ["人生の選択","大きな決断","チャンス到来"],
+    career: ["キャリアアップ","転職の機会","スキル取得"],
+    investment: ["投資チャンス","資産運用"]
+  };
+  return Array.from({ length: LIFE_BOARD_LENGTH }, (_, index) => {
+    if (index === 0) return { id: index, type: "start", title: "人生のスタート", description: "ここからあなたの人生が始まる。" };
+    if (index === LIFE_BOARD_LENGTH - 1) return { id: index, type: "finish", title: "人生のゴール", description: "人生の最終地点。総資産を集計します。" };
+    const type = LIFE_TILE_TYPES[(index - 1) % LIFE_TILE_TYPES.length];
+    const options = names[type];
+    return { id: index, type, title: options[(index - 1) % options.length], description: "" };
+  });
+}
+function lifeSnapshot(game) {
+  if (!game) return null;
+  return JSON.parse(JSON.stringify(game));
+}
+function broadcastLifeState(room) {
+  if (room?.lifeGame) io.to(room.id).emit("life:state", lifeSnapshot(room.lifeGame));
+}
+function lifeLog(game, message) {
+  game.log.unshift({ id: crypto.randomUUID(), message, at: Date.now() });
+  game.log = game.log.slice(0, 40);
+}
+function nextLifeTurn(game) {
+  if (!game.players.length) return;
+  const total = game.players.length;
+  for (let step = 1; step <= total; step++) {
+    const index = (game.turnIndex + step) % total;
+    if (!game.players[index].finished) {
+      game.turnIndex = index;
+      game.turnNumber += 1;
+      return;
+    }
+  }
+  game.status = "finished";
+  game.currentEvent = null;
+}
+function finishLifePlayer(game, player) {
+  player.finished = true;
+  player.finishOrder = game.players.filter(p => p.finished).length;
+  lifeLog(game, player.name + " がゴールしました！");
+  if (game.players.every(p => p.finished)) {
+    game.status = "finished";
+    game.currentEvent = null;
+    game.winnerId = [...game.players].sort((a,b) => b.cash - a.cash)[0]?.id || null;
+    lifeLog(game, "全員ゴール！最終資産ランキングが確定しました。");
+  } else {
+    nextLifeTurn(game);
+  }
+}
+function resolveLifeTile(game, player, tile) {
+  game.currentEvent = null;
+  if (tile.type === "salary") {
+    const amount = Math.max(50000, player.salary || 100000);
+    player.cash += amount;
+    lifeLog(game, player.name + " は給料日で " + amount.toLocaleString("ja-JP") + "円を受け取りました。");
+  } else if (tile.type === "bonus") {
+    const amount = 50000 + crypto.randomInt(0, 6) * 25000;
+    player.cash += amount;
+    lifeLog(game, player.name + " は臨時収入 " + amount.toLocaleString("ja-JP") + "円を獲得！");
+  } else if (tile.type === "expense") {
+    const amount = Math.min(player.cash, 30000 + crypto.randomInt(0, 5) * 15000);
+    player.cash -= amount;
+    lifeLog(game, player.name + " に " + amount.toLocaleString("ja-JP") + "円の出費が発生。");
+  } else if (tile.type === "career") {
+    game.currentEvent = {
+      playerId: player.id, title: "キャリアアップ", description: "今後の給料が変わる選択です。",
+      choices: [
+        { id: "stable", label: "安定した仕事", detail: "給料 +50,000円", salary: 50000, career: "会社員" },
+        { id: "challenge", label: "挑戦する仕事", detail: "給料 +100,000円", salary: 100000, career: "専門職" }
+      ]
+    };
+  } else if (tile.type === "investment") {
+    game.currentEvent = {
+      playerId: player.id, title: "投資チャンス", description: "資金を投じるか、安全策を取るか。",
+      choices: [
+        { id: "invest", label: "50万円を投資", detail: "成功すれば大きな利益。失敗の可能性も。", investment: true },
+        { id: "save", label: "今回は見送る", detail: "お金は減りません。", cashDelta: 0 }
+      ]
+    };
+  } else if (tile.type === "choice") {
+    game.currentEvent = {
+      playerId: player.id, title: "人生の選択", description: "あなたならどうする？",
+      choices: [
+        { id: "study", label: "学びに投資する", detail: "20万円を支払い、給料が上がる", cashDelta: -200000, salary: 50000 },
+        { id: "travel", label: "旅行に出かける", detail: "10万円を使って気分転換", cashDelta: -100000 },
+        { id: "work", label: "今は貯金する", detail: "お金を使わない", cashDelta: 0 }
+      ]
+    };
+  } else if (tile.type === "event") {
+    const events = [
+      { message: "友人からお祝いをもらった！", delta: 80000 },
+      { message: "家電が故障してしまった……", delta: -60000 },
+      { message: "副業がうまくいった！", delta: 120000 },
+      { message: "思いがけないプレゼント！", delta: 40000 },
+      { message: "急な出費が発生した。", delta: -90000 }
+    ];
+    const event = events[crypto.randomInt(0, events.length)];
+    const delta = event.delta < 0 ? -Math.min(player.cash, Math.abs(event.delta)) : event.delta;
+    player.cash += delta;
+    lifeLog(game, player.name + "：" + event.message + "（" + (delta >= 0 ? "+" : "") + delta.toLocaleString("ja-JP") + "円）");
+  }
+  if (tile.type === "finish") finishLifePlayer(game, player);
+  if (game.currentEvent) game.currentEvent.playerId = player.id;
+}
+function removeLifePlayer(room, playerId) {
+  const game = room?.lifeGame;
+  if (!game || game.status === "finished") return;
+  const index = game.players.findIndex(player => player.id === playerId);
+  if (index < 0) return;
+  const [removed] = game.players.splice(index, 1);
+  lifeLog(game, removed.name + " がゲームから退出しました。");
+  if (game.currentEvent?.playerId === playerId) game.currentEvent = null;
+  if (index < game.turnIndex) game.turnIndex -= 1;
+  else if (index === game.turnIndex && game.status === "playing") game.turnIndex -= 1;
+  if (!game.players.length) { room.lifeGame = null; return; }
+  if (game.status === "playing") nextLifeTurn(game);
+  broadcastLifeState(room);
+}
 
 app.get("/config.js", (_req, res) => {
   res.type("application/javascript").set("Cache-Control", "no-store").send(
@@ -63,6 +191,7 @@ function enterRoom(socket, roomId, name, role, reply) {
     role: io.sockets.sockets.get(id)?.data.role || "guest"
   }));
   reply({ ok: true, roomId, roomName: room.name, peers, selfId: socket.id });
+  if (room.lifeGame) socket.emit("life:state", lifeSnapshot(room.lifeGame));
   socket.to(roomId).emit("peer:joined", { id: socket.id, name, role });
   io.to(roomId).emit("room:count", room.members.size);
   broadcastRoomList();
@@ -90,6 +219,7 @@ function leaveRoom(socket) {
     closeRoom(roomId);
     return;
   }
+  removeLifePlayer(room, socket.id);
   room.members.delete(socket.id);
   socket.leave(roomId);
   socket.data.roomId = null;
@@ -138,8 +268,8 @@ io.on("connection", socket => {
     try {
       const credentials = await hashPassword(password);
       rooms.set(roomId, {
-        name: roomName, members: new Set(), createdAt: Date.now(),
-        passwordSalt: credentials.salt, passwordHash: credentials.hash
+        id: roomId, name: roomName, members: new Set(), createdAt: Date.now(),
+        passwordSalt: credentials.salt, passwordHash: credentials.hash, lifeGame: null
       });
       enterRoom(socket, roomId, name, "host", reply);
     } catch (error) {
@@ -162,6 +292,107 @@ io.on("connection", socket => {
       console.error("Room password verification failed", error);
       reply({ ok: false, error: "パスワードを確認できませんでした。" });
     }
+  });
+
+  socket.on("life:sync", (_data, reply = () => {}) => {
+    const room = rooms.get(socket.data.roomId);
+    if (!room) return reply({ ok: false, error: "通話ルームに参加していません。" });
+    reply({ ok: true, game: lifeSnapshot(room.lifeGame) });
+  });
+
+  socket.on("life:create", (_data, reply = () => {}) => {
+    const room = rooms.get(socket.data.roomId);
+    if (!room || socket.data.role !== "host") return reply({ ok: false, error: "ゲームを作成できるのはホストだけです。" });
+    if (room.lifeGame) return reply({ ok: false, error: "この通話には既に人生ゲームがあります。" });
+    const player = { id: socket.id, name: socket.data.name || "Host", position: 0, cash: LIFE_START_CASH, salary: 100000, career: "未就職", ready: true, finished: false };
+    room.lifeGame = {
+      version: 1, status: "lobby", hostId: socket.id, players: [player],
+      board: makeLifeBoard(), turnIndex: 0, turnNumber: 1, currentEvent: null,
+      lastRoll: null, winnerId: null, log: [{ id: crypto.randomUUID(), message: "NOVALINK LIFE が作成されました。参加者を待っています。", at: Date.now() }]
+    };
+    broadcastLifeState(room);
+    reply({ ok: true });
+  });
+
+  socket.on("life:join", (_data, reply = () => {}) => {
+    const room = rooms.get(socket.data.roomId);
+    const game = room?.lifeGame;
+    if (!game || game.status !== "lobby") return reply({ ok: false, error: "参加できるゲームがありません。" });
+    if (game.players.some(player => player.id === socket.id)) return reply({ ok: true });
+    if (game.players.length >= MAX_PEERS) return reply({ ok: false, error: "ゲームは最大10人です。" });
+    game.players.push({ id: socket.id, name: socket.data.name || "Guest", position: 0, cash: LIFE_START_CASH, salary: 100000, career: "未就職", ready: false, finished: false });
+    lifeLog(game, (socket.data.name || "Guest") + " がゲームに参加しました。");
+    broadcastLifeState(room);
+    reply({ ok: true });
+  });
+
+  socket.on("life:ready", ({ ready } = {}, reply = () => {}) => {
+    const room = rooms.get(socket.data.roomId), game = room?.lifeGame;
+    const player = game?.players.find(item => item.id === socket.id);
+    if (!player || game.status !== "lobby") return reply({ ok: false, error: "準備状態を変更できません。" });
+    player.ready = !!ready;
+    broadcastLifeState(room);
+    reply({ ok: true });
+  });
+
+  socket.on("life:start", (_data, reply = () => {}) => {
+    const room = rooms.get(socket.data.roomId), game = room?.lifeGame;
+    if (!game || socket.data.role !== "host" || game.hostId !== socket.id) return reply({ ok: false, error: "開始できるのはホストだけです。" });
+    if (game.status !== "lobby") return reply({ ok: false, error: "ゲームは既に開始されています。" });
+    if (game.players.length < 2) return reply({ ok: false, error: "開始には2人以上の参加が必要です。" });
+    if (!game.players.every(player => player.ready)) return reply({ ok: false, error: "全員の準備が完了していません。" });
+    game.status = "playing";
+    game.turnIndex = 0;
+    game.turnNumber = 1;
+    lifeLog(game, "人生ゲーム開始！ " + game.players[0].name + " の番です。");
+    broadcastLifeState(room);
+    reply({ ok: true });
+  });
+
+  socket.on("life:roll", (_data, reply = () => {}) => {
+    const room = rooms.get(socket.data.roomId), game = room?.lifeGame;
+    if (!game || game.status !== "playing" || game.currentEvent) return reply({ ok: false, error: "現在サイコロを振れません。" });
+    const player = game.players[game.turnIndex];
+    if (!player || player.id !== socket.id || player.finished) return reply({ ok: false, error: "あなたのターンではありません。" });
+    const roll = crypto.randomInt(1, 7);
+    const from = player.position;
+    player.position = Math.min(game.board.length - 1, player.position + roll);
+    game.lastRoll = { playerId: player.id, playerName: player.name, value: roll, from, to: player.position, at: Date.now() };
+    const tile = game.board[player.position];
+    lifeLog(game, player.name + " が " + roll + " を出して「" + tile.title + "」に到着。");
+    resolveLifeTile(game, player, tile);
+    if (!game.currentEvent && game.status === "playing") nextLifeTurn(game);
+    broadcastLifeState(room);
+    reply({ ok: true });
+  });
+
+  socket.on("life:choose", ({ choiceId } = {}, reply = () => {}) => {
+    const room = rooms.get(socket.data.roomId), game = room?.lifeGame;
+    const event = game?.currentEvent;
+    const player = game?.players[game.turnIndex];
+    if (!event || !player || player.id !== socket.id || event.playerId !== socket.id) return reply({ ok: false, error: "選択できるイベントがありません。" });
+    const choice = event.choices.find(item => item.id === String(choiceId || ""));
+    if (!choice) return reply({ ok: false, error: "無効な選択です。" });
+    if (choice.investment) {
+      if (player.cash < 500000) {
+        lifeLog(game, player.name + " は資金不足で投資を見送りました。");
+      } else {
+        player.cash -= 500000;
+        const success = crypto.randomInt(0, 100) < 65;
+        const change = success ? 850000 : 150000;
+        player.cash += change;
+        lifeLog(game, player.name + " の投資は" + (success ? "成功！" : "失敗……") + "（受取 " + change.toLocaleString("ja-JP") + "円）");
+      }
+    } else {
+      if (Number.isFinite(choice.cashDelta)) player.cash = Math.max(0, player.cash + choice.cashDelta);
+      if (Number.isFinite(choice.salary)) player.salary += choice.salary;
+      if (choice.career) player.career = choice.career;
+      lifeLog(game, player.name + " は「" + choice.label + "」を選択しました。");
+    }
+    game.currentEvent = null;
+    nextLifeTurn(game);
+    broadcastLifeState(room);
+    reply({ ok: true });
   });
 
   socket.on("signal", ({ to, data } = {}) => {
