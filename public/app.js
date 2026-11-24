@@ -340,3 +340,18 @@ $("leaveBtn").onclick = async () => {
 };
 $("hostBtn").onclick = () => join("host");\n$("joinBtn").onclick = () => join("guest");
 $("roomId").value = new URLSearchParams(location.search).get("room") || "";
+
+\n// Premium interface motion: pointer light and cinematic intro.
+window.addEventListener("DOMContentLoaded", () => {
+  const boot = $("bootScreen");
+  if (boot) window.setTimeout(() => boot.classList.add("done"), 1050);
+  const glow = $("pointerGlow");
+  if (glow && matchMedia("(pointer:fine)").matches) {
+    document.addEventListener("pointermove", event => {
+      glow.style.left = event.clientX + "px";
+      glow.style.top = event.clientY + "px";
+      glow.style.opacity = "1";
+    }, { passive: true });
+    document.addEventListener("pointerleave", () => glow.style.opacity = "0");
+  }
+});
