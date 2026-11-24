@@ -706,6 +706,14 @@ async function makePeer(id, name, initiator) {
   const screenTransceiver = pc.addTransceiver("video", { direction: "sendrecv", streams: [screenMediaStream] });
   peers.get(id).screenSender = screenTransceiver.sender;
   if (screenStream?.getVideoTracks()[0]) await screenTransceiver.sender.replaceTrack(screenStream.getVideoTracks()[0]);
+
+  // Reserve a separate audio sender for captured tab/system audio. This avoids
+  // renegotiating the peer connection after the user starts sharing.
+  const screenAudioMediaStream = new MediaStream();
+  const screenAudioTransceiver = pc.addTransceiver("audio", { direction: "sendrecv", streams: [screenAudioMediaStream] });
+  peers.get(id).screenAudioSender = screenAudioTransceiver.sender;
+  const existingScreenAudio = screenStream?.getAudioTracks?.()[0];
+  if (existingScreenAudio) await screenAudioTransceiver.sender.replaceTrack(existingScreenAudio);
   pc.onicecandidate = e => { if (e.candidate) socket.emit("signal", { to: id, data: { candidate: e.candidate } }); };
   pc.ontrack = e => {
     const track = e.track;
@@ -1127,39 +1135,92 @@ $("cameraBtn").onclick = () => {
 
 $("shareBtn").onclick = async () => {
   if (screenStream) return;
+  if (!navigator.mediaDevices?.getDisplayMedia) {
+    toast("このブラウザでは画面共有に対応していません。");
+    return;
+  }
+  const button = $("shareBtn");
+  const originalLabel = button.innerHTML;
+  button.disabled = true;
+  button.setAttribute("aria-busy", "true");
+  button.querySelector("span").textContent = "共有を準備中…";
   try {
     await stopBackgroundProcessing();
     backgroundMode = "none";
     updateBackgroundUI();
-    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-    const track = screenStream.getVideoTracks()[0];
-    for (const peer of peers.values()) {
-      if (peer.screenSender) await peer.screenSender.replaceTrack(track);
+
+    // Request a crisp desktop capture without lowering the source resolution.
+    // Browsers may choose the actual capture mode based on the selected source.
+    const capturedStream = await navigator.mediaDevices.getDisplayMedia({
+      video: {
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        frameRate: { ideal: 30, max: 60 }
+      },
+      audio: true
+    });
+    const track = capturedStream.getVideoTracks()[0];
+    if (!track) {
+      capturedStream.getTracks().forEach(item => item.stop());
+      throw new Error("画面映像を取得できませんでした。");
     }
+    track.contentHint = "detail";
+    screenStream = capturedStream;
+
+    const screenAudioTrack = capturedStream.getAudioTracks()[0] || null;
+    await Promise.all([...peers.values()].map(async peer => {
+      if (peer.screenSender) await peer.screenSender.replaceTrack(track);
+      if (peer.screenAudioSender) await peer.screenAudioSender.replaceTrack(screenAudioTrack);
+    }));
+
     let preview = $("selfTile").querySelector(".self-screen-preview");
     if (!preview) {
       preview = document.createElement("video"); preview.className = "self-screen-preview";
       preview.autoplay = true; preview.playsInline = true; preview.muted = true;
+      preview.setAttribute("autoplay", "");
+      preview.setAttribute("playsinline", "");
+      preview.muted = true;
       $("selfTile").append(preview);
     }
-    preview.srcObject = screenStream;
+    preview.srcObject = capturedStream;
+    preview.play().catch(() => {});
     $("selfTile").classList.add("sharing-screen");
-    $("stopShareBtn").classList.remove("hidden"); $("shareBtn").classList.add("active");
+    $("stopShareBtn").classList.remove("hidden");
+    button.classList.add("active");
+    button.querySelector("span").textContent = "共有中";
     track.onended = stopShare;
-  } catch (e) { screenStream = null; toast("画面共有を開始できませんでした。"); }
+    toast(screenAudioTrack ? "高画質画面共有・共有音声を開始しました。" : "高画質画面共有を開始しました。");
+  } catch (e) {
+    console.warn("Screen share failed:", e);
+    screenStream?.getTracks().forEach(track => track.stop());
+    screenStream = null;
+    if (e?.name === "NotAllowedError") toast("画面共有がキャンセルされました。");
+    else toast(e?.message || "画面共有を開始できませんでした。");
+  } finally {
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+    if (!screenStream) button.innerHTML = originalLabel;
+  }
 };
 $("stopShareBtn").onclick = stopShare;
 async function stopShare() {
   if (!screenStream) return;
   const streamToStop = screenStream; screenStream = null;
-  for (const peer of peers.values()) {
-    if (peer.screenSender) await peer.screenSender.replaceTrack(null);
-  }
+  await Promise.all([...peers.values()].map(async peer => {
+    try {
+      if (peer.screenSender) await peer.screenSender.replaceTrack(null);
+      if (peer.screenAudioSender) await peer.screenAudioSender.replaceTrack(null);
+    } catch (error) {
+      console.warn("Could not detach a screen-share track:", error);
+    }
+  }));
   streamToStop.getTracks().forEach(t => t.stop());
   const preview = $("selfTile").querySelector(".self-screen-preview");
   if (preview) { preview.srcObject = null; preview.remove(); }
   $("selfTile").classList.remove("sharing-screen");
-  $("stopShareBtn").classList.add("hidden"); $("shareBtn").classList.remove("active");
+  $("stopShareBtn").classList.add("hidden");
+  $("shareBtn").classList.remove("active");
+  $("shareBtn").querySelector("span").textContent = "画面共有";
   toast("画面共有を終了しました。");
 }
 
