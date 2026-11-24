@@ -16,9 +16,10 @@ function toast(message) {
 function randomId() { return Math.random().toString(36).slice(2, 8).toUpperCase(); }
 $("randomRoom").onclick = () => $("roomId").value = randomId();
 
-async function join() {
+async function join(role = "guest") {
   const name = $("displayName").value.trim() || "Guest";
-  roomId = $("roomId").value.trim() || randomId();
+  roomId = role === "host" ? randomId() : $("roomId").value.trim();
+  if (!roomId) { toast("参加するルームIDを入力してください。"); return; }
   $("roomId").value = roomId;
   try {
     localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -29,15 +30,16 @@ async function join() {
   $("cameraSource").srcObject = localStream;
   await $("cameraSource").play().catch(() => {});
   $("localVideo").srcObject = localStream;
-  socket.emit("room:join", { roomId, name }, async (result) => {
+  socket.emit("room:join", { roomId, name, role }, async (result) => {
     if (!result?.ok) { localStream.getTracks().forEach(t => t.stop()); localStream = null; toast(result?.error || "参加できませんでした。"); return; }
     selfId = result.selfId;
     $("home").classList.add("hidden");
     $("meeting").classList.remove("hidden");
-    $("meetingTitle").textContent = name + " のミーティング";
+    $("meetingTitle").textContent = name + (role === "host" ? " のルーム" : " が参加中");
     $("roomLabel").textContent = "ROOM / " + roomId;
     $("memberCount").textContent = result.peers.length + 1;
     updateParticipants(name, result.peers);
+    $("selfName").textContent = name + (role === "host" ? " · HOST" : " · GUEST");
     history.replaceState({}, "", "/?room=" + encodeURIComponent(roomId));
     for (const peer of result.peers) await makePeer(peer.id, peer.name, true);
   });
@@ -336,5 +338,5 @@ $("leaveBtn").onclick = async () => {
   if (screenStream) screenStream.getTracks().forEach(t => t.stop());
   location.href = "/";
 };
-$("joinBtn").onclick = join;
+$("hostBtn").onclick = () => join("host");\n$("joinBtn").onclick = () => join("guest");
 $("roomId").value = new URLSearchParams(location.search).get("room") || "";
