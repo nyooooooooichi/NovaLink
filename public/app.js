@@ -1028,7 +1028,19 @@ socket.on("room:closed", ({ message } = {}) => {
 window.addEventListener("DOMContentLoaded", () => {
   initAuth();
   const boot = $("bootScreen");
-  if (boot) window.setTimeout(() => boot.classList.add("done"), 1050);
+  if (boot) {
+    boot.classList.add("sequence-start");
+    const status = $("bootStatus");
+    window.setTimeout(() => {
+      boot.classList.add("sequence-lock");
+      if (status) status.textContent = "SECURE CHANNEL ESTABLISHED";
+    }, 1050);
+    window.setTimeout(() => {
+      boot.classList.add("sequence-launch");
+      if (status) status.textContent = "WELCOME TO NOVALINK";
+    }, 1650);
+    window.setTimeout(() => boot.classList.add("done"), 2450);
+  }
   const glow = $("pointerGlow");
   if (glow && matchMedia("(pointer:fine)").matches) {
     document.addEventListener("pointermove", event => {
