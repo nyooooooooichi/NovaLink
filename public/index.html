@@ -83,6 +83,7 @@
             <button id="shareBtn" class="control-btn">▧ <span>画面共有</span></button>
             <button id="stopShareBtn" class="control-btn danger hidden">■ <span>共有を終了</span></button>
             <button id="copyBtn" class="control-btn">↗ <span>招待</span></button>
+            <button id="lifeGameBtn" class="control-btn life-launch-btn">🎲 <span>人生ゲーム</span></button>
             <button id="themeBtn" class="control-btn">✧ 演出: ON</button>
             <button id="leaveBtn" class="control-btn danger">✕ <span>退出</span></button>
           </div>
@@ -107,6 +108,34 @@
           <form id="chatForm" class="chat-form"><input id="chatInput" maxlength="1000" placeholder="メッセージを入力..." autocomplete="off"><button aria-label="送信">↑</button></form>
         </aside>
       </div>
+      <section id="lifeGamePanel" class="life-game-panel hidden" aria-label="NOVALINK LIFE">
+        <div class="life-game-header">
+          <div><div class="life-eyebrow">NOVALINK ORIGINAL GAME</div><h2>NOVALINK LIFE <span>人生ゲーム</span></h2><p>みんなで進める、あなただけの人生。</p></div>
+          <button id="lifeCloseBtn" class="control-btn" type="button">閉じる ×</button>
+        </div>
+        <div class="life-toolbar">
+          <div><span class="life-status-dot"></span><strong id="lifeStatus">ゲーム未作成</strong><small id="lifeTurnLabel">通話内でプレイできます</small></div>
+          <div class="life-toolbar-actions">
+            <button id="lifeCreateBtn" class="life-action primary" type="button">ゲームを作成</button>
+            <button id="lifeJoinBtn" class="life-action" type="button" hidden>ゲームに参加</button>
+            <button id="lifeReadyBtn" class="life-action" type="button" hidden>準備OK</button>
+            <button id="lifeStartBtn" class="life-action primary" type="button" hidden>ゲーム開始</button>
+            <button id="lifeRollBtn" class="life-action roll" type="button" hidden>🎲 サイコロを振る</button>
+          </div>
+        </div>
+        <div class="life-layout">
+          <div class="life-board-wrap">
+            <div class="life-board-heading"><div><b>THE JOURNEY OF LIFE</b><span>人生の道のり</span></div><small>START <i>→</i> GOAL</small></div>
+            <div id="lifeBoard" class="life-board" aria-label="人生ゲームの盤面"><div class="life-board-empty">ホストがゲームを作成すると、人生の盤面が表示されます。</div></div>
+          </div>
+          <aside class="life-sidebar">
+            <section class="life-side-card"><h3>PLAYER STATUS <span>参加者</span></h3><div id="lifePlayers" class="life-player-list"><p class="life-muted">まだゲームに参加していません。</p></div></section>
+            <section id="lifeEventCard" class="life-event-card hidden"><small>YOUR LIFE EVENT</small><h3 id="lifeEventTitle"></h3><p id="lifeEventDescription"></p><div id="lifeEventChoices" class="life-event-choices"></div></section>
+            <section class="life-side-card"><h3>LIFE LOG <span>履歴</span></h3><div id="lifeLog" class="life-log"><p class="life-muted">ゲームの出来事がここに表示されます。</p></div></section>
+          </aside>
+        </div>
+        <p class="life-footnote">ゲームの進行・サイコロ・所持金はサーバーで管理されます。通話を退出するとゲームからも退出します。</p>
+      </section>
     </section>
   </main>
   <section id="authModal" class="auth-modal hidden" aria-hidden="true">
