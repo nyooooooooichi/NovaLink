@@ -445,17 +445,50 @@ socket.on("room:list:update", rooms => {
   if (!$("roomBrowser").classList.contains("hidden")) renderRoomList(rooms || []);
 });
 
+let mediaAcquisitionPromise = null;
 async function acquireMedia() {
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    $("cameraSource").srcObject = localStream;
-    await $("cameraSource").play().catch(() => {});
-    $("localVideo").srcObject = localStream;
-    return true;
-  } catch (e) {
-    toast("カメラ・マイクを利用できません。ブラウザの権限を確認してください。");
-    return false;
-  }
+  if (localStream?.getTracks().some(track => track.readyState === "live")) return true;
+  if (mediaAcquisitionPromise) return mediaAcquisitionPromise;
+  mediaAcquisitionPromise = (async () => {
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("このブラウザではカメラ機能を利用できません。");
+      }
+      // iPhoneでは前面カメラを優先し、画面内再生に必要な属性も明示する。
+      localStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "user" } },
+        audio: true
+      });
+      const source = $("cameraSource");
+      const preview = $("localVideo");
+      source.muted = true;
+      source.autoplay = true;
+      source.playsInline = true;
+      preview.muted = true;
+      preview.autoplay = true;
+      preview.playsInline = true;
+      source.srcObject = localStream;
+      preview.srcObject = localStream;
+      await source.play().catch(error => console.debug("Camera source autoplay deferred:", error));
+      return true;
+    } catch (e) {
+      console.warn("NovaLink camera initialization failed:", e);
+      localStream?.getTracks().forEach(track => track.stop());
+      localStream = null;
+      const message = e?.name === "NotAllowedError"
+        ? "カメラ・マイクの許可が必要です。iPhoneの設定とブラウザのサイト設定を確認してください。"
+        : e?.name === "NotFoundError"
+          ? "利用できるカメラまたはマイクが見つかりません。"
+          : e?.name === "NotReadableError"
+            ? "カメラが他のアプリで使用中の可能性があります。"
+            : e?.message || "カメラ・マイクを利用できません。";
+      toast(message);
+      return false;
+    } finally {
+      mediaAcquisitionPromise = null;
+    }
+  })();
+  return mediaAcquisitionPromise;
 }
 function enterMeeting(result, name, role) {
   selfId = result.selfId;
@@ -466,6 +499,19 @@ function enterMeeting(result, name, role) {
   $("roomBrowser").classList.add("hidden");
   $("home").classList.add("hidden");
   $("meeting").classList.remove("hidden");
+  const localPreview = $("localVideo");
+  if (localStream) {
+    localPreview.muted = true;
+    localPreview.autoplay = true;
+    localPreview.playsInline = true;
+    localPreview.srcObject = localStream;
+    // iOS Safari may suspend playback while its parent was display:none.
+    requestAnimationFrame(() => {
+      localPreview.play().catch(error => {
+        console.warn("Local camera preview playback was blocked:", error);
+      });
+    });
+  }
   $("meetingTitle").textContent = result.roomName || "ミーティング";
   $("roomLabel").textContent = "ROOM / " + result.roomId;
   $("memberCount").textContent = result.peers.length + 1;
@@ -480,22 +526,51 @@ function enterMeeting(result, name, role) {
     }
   });
 }
+let roomCreationInProgress = false;
 async function createRoom() {
+  if (roomCreationInProgress) return;
   const roomName = $("createRoomName").value.trim();
   const password = $("createRoomPassword").value;
   const name = $("displayName").value.trim() || "Host";
   if (password.length < 4 || password.length > 64) return toast("パスワードは4〜64文字で設定してください。");
-  if (!await acquireMedia()) return;
-  $("hostBtn").disabled = true;
-  socket.emit("room:create", { roomName, password, name }, result => {
-    $("hostBtn").disabled = false;
-    if (!result?.ok) {
-      localStream?.getTracks().forEach(track => track.stop()); localStream = null;
-      return toast(result?.error || "部屋を作成できませんでした。");
+
+  const button = $("hostBtn");
+  const originalLabel = button.innerHTML;
+  roomCreationInProgress = true;
+  button.disabled = true;
+  button.setAttribute("aria-busy", "true");
+  button.textContent = "カメラを準備中…";
+  try {
+    if (!await acquireMedia()) return;
+    button.textContent = "ルームを作成中…";
+    const response = await new Promise(resolve => {
+      socket.timeout(20000).emit("room:create", { roomName, password, name }, (error, result) => {
+        if (error) return resolve({ ok: false, error: "サーバーから応答がありません。通信状態を確認して、もう一度お試しください。" });
+        resolve(result || { ok: false, error: "部屋を作成できませんでした。" });
+      });
+    });
+    if (!response?.ok) {
+      localStream?.getTracks().forEach(track => track.stop());
+      localStream = null;
+      $("cameraSource").srcObject = null;
+      $("localVideo").srcObject = null;
+      return toast(response?.error || "部屋を作成できませんでした。");
     }
     $("createRoomPassword").value = "";
-    enterMeeting(result, name, "host");
-  });
+    enterMeeting(response, name, "host");
+  } catch (error) {
+    console.error("Room creation failed:", error);
+    localStream?.getTracks().forEach(track => track.stop());
+    localStream = null;
+    $("cameraSource").srcObject = null;
+    $("localVideo").srcObject = null;
+    toast("部屋の作成中にエラーが発生しました。通信状態を確認してください。");
+  } finally {
+    roomCreationInProgress = false;
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+    button.innerHTML = originalLabel;
+  }
 }
 async function joinSelectedRoom() {
   if (!selectedRoomId) return toast("参加する部屋を選択してください。");
