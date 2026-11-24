@@ -1,22 +1,12 @@
 const socket = io();
 const $ = (id) => document.getElementById(id);
 
-let authClient = null, authUser = null, authMode = "login", pendingAvatarBlob = null, pendingAvatarPreview = null;
+let authClient = null, authUser = null, pendingAvatarBlob = null, pendingAvatarPreview = null;
 function authMessage(message, isError = false) {
   const node = $("authMessage");
   if (!node) return;
   node.textContent = message;
   node.classList.toggle("error", isError);
-}
-function setAuthMode(mode) {
-  authMode = mode;
-  $("authLoginMode").classList.toggle("selected", mode === "login");
-  $("authSignupMode").classList.toggle("selected", mode === "signup");
-  $("authUsernameWrap").classList.toggle("hidden", mode !== "signup");
-  $("authUsername").classList.toggle("hidden", mode !== "signup");
-  $("authPassword").autocomplete = mode === "signup" ? "new-password" : "current-password";
-  $("authSubmit").textContent = mode === "signup" ? "アカウントを作成" : "ログイン";
-  authMessage("");
 }
 function openAuthModal() {
   $("authModal").classList.remove("hidden");
@@ -73,44 +63,17 @@ async function initAuth() {
 $("accountBtn").onclick = openAuthModal;
 $("authClose").onclick = closeAuthModal;
 document.querySelectorAll("[data-auth-close]").forEach(el => el.addEventListener("click", closeAuthModal));
-$("authLoginMode").onclick = () => setAuthMode("login");
-$("authSignupMode").onclick = () => setAuthMode("signup");
 document.querySelectorAll("[data-provider]").forEach(button => button.addEventListener("click", async () => {
   if (!authClient) return authMessage("認証設定がまだ完了していません。", true);
-  const provider = button.dataset.provider;
   button.disabled = true;
   const { error } = await authClient.auth.signInWithOAuth({
-    provider,
+    provider: "google",
     options: { redirectTo: window.location.origin }
   });
   button.disabled = false;
   if (error) authMessage(error.message, true);
 }));
-$("authForm").onsubmit = async event => {
-  event.preventDefault();
-  if (!authClient) return authMessage("認証設定がまだ完了していません。", true);
-  const email = $("authEmail").value.trim();
-  const password = $("authPassword").value;
-  const username = $("authUsername").value.trim();
-  $("authSubmit").disabled = true;
-  authMessage(authMode === "signup" ? "アカウントを作成しています…" : "ログインしています…");
-  try {
-    if (authMode === "signup") {
-      if (!username) throw new Error("ユーザー名を入力してください。");
-      const { data, error } = await authClient.auth.signUp({
-        email, password, options: { data: { username } }
-      });
-      if (error) throw error;
-      if (data.session) authMessage("アカウントを作成しました。");
-      else authMessage("確認メールを送信しました。メール内のリンクから登録を完了してください。");
-    } else {
-      const { error } = await authClient.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      authMessage("ログインしました。");
-    }
-  } catch (error) { authMessage(error.message || "認証に失敗しました。", true); }
-  finally { $("authSubmit").disabled = false; }
-};
+
 $("profileAvatarFile").onchange = event => {
   const file = event.target.files?.[0];
   if (!file) return;
