@@ -338,10 +338,12 @@ $("leaveBtn").onclick = async () => {
   if (screenStream) screenStream.getTracks().forEach(t => t.stop());
   location.href = "/";
 };
-$("hostBtn").onclick = () => join("host");\n$("joinBtn").onclick = () => join("guest");
+$("hostBtn").onclick = () => join("host");
+$("joinBtn").onclick = () => join("guest");
 $("roomId").value = new URLSearchParams(location.search).get("room") || "";
 
-\n// Premium interface motion: pointer light and cinematic intro.
+
+// Premium interface motion: pointer light and cinematic intro.
 window.addEventListener("DOMContentLoaded", () => {
   const boot = $("bootScreen");
   if (boot) window.setTimeout(() => boot.classList.add("done"), 1050);
