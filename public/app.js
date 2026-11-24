@@ -1223,6 +1223,90 @@ $("cameraBtn").onclick = () => {
   $("cameraBtn").classList.toggle("active", cameraOn); $("cameraBtn").querySelector("span").textContent = cameraOn ? "カメラ" : "カメラOFF";
 };
 
+
+// SCREEN SHARE 3.0 — adaptive bitrate + live transport telemetry.
+let screenQualityTimer = null;
+let screenQualityPrevious = new Map();
+let screenQualityLevel = "high";
+let screenQualityRecovery = 0;
+const screenQualityProfiles = {
+  high:   { maxBitrate: 4500000, label: "高画質" },
+  medium: { maxBitrate: 2800000, label: "バランス" },
+  low:    { maxBitrate: 1600000, label: "低帯域" },
+  safe:   { maxBitrate: 900000,  label: "安定優先" }
+};
+function setScreenQualityLevel(level) {
+  if (!screenQualityProfiles[level] || screenQualityLevel === level) return;
+  screenQualityLevel = level;
+  const profile = screenQualityProfiles[level];
+  peers.forEach(async peer => {
+    const sender = peer.screenSender;
+    if (!sender?.getParameters || !sender?.setParameters) return;
+    try {
+      const params = sender.getParameters();
+      params.encodings = params.encodings?.length ? params.encodings : [{}];
+      params.encodings[0].maxBitrate = profile.maxBitrate;
+      params.degradationPreference = "maintain-resolution";
+      await sender.setParameters(params);
+    } catch (error) { console.warn("Adaptive screen bitrate could not be applied:", error); }
+  });
+  const levelNode = $("screenQualityMode");
+  if (levelNode) levelNode.textContent = profile.label;
+}
+async function readScreenPeerStats(peer, id) {
+  const sender = peer.screenSender;
+  if (!sender?.getStats) return null;
+  try {
+    const report = await sender.getStats();
+    let outbound = null, remote = null, candidatePair = null;
+    report.forEach(stat => {
+      if (stat.type === "outbound-rtp" && (stat.kind === "video" || stat.mediaType === "video")) outbound = stat;
+      if (stat.type === "remote-inbound-rtp" && (stat.kind === "video" || stat.mediaType === "video")) remote = stat;
+      if (stat.type === "candidate-pair" && stat.state === "succeeded" && stat.nominated) candidatePair = stat;
+    });
+    const now = performance.now(), previous = screenQualityPrevious.get(id);
+    const bytes = outbound?.bytesSent ?? 0;
+    const bitrate = previous && now > previous.at ? Math.max(0, (bytes - previous.bytes) * 8 * 1000 / (now - previous.at)) : 0;
+    screenQualityPrevious.set(id, { at: now, bytes });
+    return { fps:Number(outbound?.framesPerSecond||0), width:Number(outbound?.frameWidth||0), height:Number(outbound?.frameHeight||0), bitrate, rtt:Number(remote?.roundTripTime??candidatePair?.currentRoundTripTime??0), loss:Number(remote?.fractionLost||0) };
+  } catch (error) { console.warn("Screen-share stats unavailable:", error); return null; }
+}
+function renderScreenQuality(stats) {
+  const set=(id,value)=>{const node=$(id);if(node)node.textContent=value;};
+  if(!stats.length){set("screenQualityFps","計測中");set("screenQualityResolution","—");set("screenQualityBitrate","—");set("screenQualityRtt","—");set("screenQualityLoss","—");return;}
+  const fps=stats.map(s=>s.fps).filter(Boolean), first=stats.find(s=>s.width&&s.height);
+  const bitrate=stats.reduce((sum,s)=>sum+s.bitrate,0), rtt=Math.max(...stats.map(s=>s.rtt)), loss=Math.max(...stats.map(s=>s.loss));
+  set("screenQualityFps",fps.length?Math.round(Math.min(...fps))+" FPS":"計測中");
+  set("screenQualityResolution",first?first.width+" × "+first.height:"計測中");
+  set("screenQualityBitrate",bitrate>=1000000?(bitrate/1000000).toFixed(1)+" Mbps":Math.round(bitrate/1000)+" kbps");
+  set("screenQualityRtt",rtt?Math.round(rtt*1000)+" ms":"計測中");
+  set("screenQualityLoss",(loss*100).toFixed(1)+"%");
+}
+async function sampleScreenQuality() {
+  if(!screenStream)return;
+  const samples=(await Promise.all([...peers.entries()].map(([id,peer])=>readScreenPeerStats(peer,id)))).filter(Boolean);
+  renderScreenQuality(samples);
+  if(!samples.length)return;
+  const rtt=Math.max(...samples.map(s=>s.rtt)), loss=Math.max(...samples.map(s=>s.loss)), fps=Math.min(...samples.map(s=>s.fps||60));
+  let target="high";
+  if(rtt>.8||loss>.15||fps<10)target="safe";
+  else if(rtt>.5||loss>.08||fps<18)target="low";
+  else if(rtt>.28||loss>.035||fps<24)target="medium";
+  if(target==="high"&&screenQualityLevel!=="high"){screenQualityRecovery++;if(screenQualityRecovery<4)return;}
+  else if(target!==screenQualityLevel)screenQualityRecovery=0;
+  else return;
+  setScreenQualityLevel(target);
+}
+function startScreenQualityMonitor() {
+  stopScreenQualityMonitor();screenQualityPrevious.clear();screenQualityLevel="high";screenQualityRecovery=0;
+  $("screenQualityPanel")?.classList.remove("hidden");setScreenQualityLevel("high");renderScreenQuality([]);
+  sampleScreenQuality();screenQualityTimer=setInterval(sampleScreenQuality,2500);
+}
+function stopScreenQualityMonitor() {
+  if(screenQualityTimer)clearInterval(screenQualityTimer);
+  screenQualityTimer=null;screenQualityPrevious.clear();$("screenQualityPanel")?.classList.add("hidden");
+}
+
 $("shareBtn").onclick = async () => {
   if (screenStream) return;
   if (!navigator.mediaDevices?.getDisplayMedia) {
@@ -1256,6 +1340,7 @@ $("shareBtn").onclick = async () => {
     }
     track.contentHint = "detail";
     screenStream = capturedStream;
+    startScreenQualityMonitor();
 
     const screenAudioTrack = capturedStream.getAudioTracks()[0] || null;
     await Promise.all([...peers.values()].map(async peer => {
@@ -1296,6 +1381,7 @@ $("stopShareBtn").onclick = stopShare;
 async function stopShare() {
   if (!screenStream) return;
   const streamToStop = screenStream; screenStream = null;
+  stopScreenQualityMonitor();
   await Promise.all([...peers.values()].map(async peer => {
     try {
       if (peer.screenSender) await peer.screenSender.replaceTrack(null);
@@ -1473,6 +1559,7 @@ async function cleanupMeetingAndReturnHome() {
   localStream = null;
   if (screenStream) screenStream.getTracks().forEach(track => track.stop());
   screenStream = null;
+  stopScreenQualityMonitor();
   $("cameraSource").srcObject = null;
   $("localVideo").pause();
   $("localVideo").srcObject = null;
