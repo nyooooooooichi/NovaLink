@@ -1,5 +1,76 @@
 const socket = io();
 const $ = (id) => document.getElementById(id);
+const NOVA_SETTINGS_KEY = "novalink-user-settings-v1";
+const NOVA_DEFAULT_SETTINGS = { fps: "30", resolution: "720", renderMode: "auto", brightness: 100, uiScale: "1", accent: "blue", reduceMotion: false, volume: 70, bootSound: true, noise: true, autoGain: true };
+let novaSettings = (() => {
+  try { return { ...NOVA_DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(NOVA_SETTINGS_KEY) || "{}") }; }
+  catch { return { ...NOVA_DEFAULT_SETTINGS }; }
+})();
+function saveNovaSettings() {
+  try { localStorage.setItem(NOVA_SETTINGS_KEY, JSON.stringify(novaSettings)); } catch (error) { console.warn("Could not save NovaLink settings:", error); }
+}
+function applyNovaSettings() {
+  const root = document.documentElement;
+  root.style.setProperty("--nova-brightness", String(Number(novaSettings.brightness) / 100));
+  root.style.setProperty("--nova-accent", ({ blue:"#83b5ff", cyan:"#68e4ec", violet:"#b59aff", green:"#8bdfa9" })[novaSettings.accent] || "#83b5ff");
+  root.style.fontSize = (16 * Number(novaSettings.uiScale || 1)) + "px";
+  document.body.classList.toggle("nova-reduce-motion", !!novaSettings.reduceMotion);
+  document.body.classList.toggle("nova-performance-mode", novaSettings.renderMode === "performance");
+  const fields = { settingFps:"fps", settingResolution:"resolution", settingRenderMode:"renderMode", settingBrightness:"brightness", settingUiScale:"uiScale", settingAccent:"accent", settingReduceMotion:"reduceMotion", settingVolume:"volume", settingBootSound:"bootSound", settingNoise:"noise", settingAutoGain:"autoGain" };
+  Object.entries(fields).forEach(([id,key]) => { const el=$(id); if(el) { if(el.type==="checkbox") el.checked=!!novaSettings[key]; else el.value=String(novaSettings[key]); } });
+  if($("brightnessValue")) $("brightnessValue").textContent = novaSettings.brightness + "%";
+  if($("volumeValue")) $("volumeValue").textContent = novaSettings.volume + "%";
+  window.novaSetBootVolume?.(novaSettings.volume, novaSettings.bootSound);
+}
+function updateNovaSetting(key, value) {
+  novaSettings[key] = value;
+  saveNovaSettings();
+  applyNovaSettings();
+  if (key === "fps" || key === "resolution" || key === "noise" || key === "autoGain") applyNovaMediaSettings();
+  if ($("settingsSaveState")) $("settingsSaveState").textContent = "保存しました。";
+}
+function openSettings() {
+  $("settingsModal").classList.remove("hidden");
+  $("settingsModal").setAttribute("aria-hidden","false");
+  document.body.classList.add("settings-open");
+  $("settingsCloseBtn").focus();
+}
+function closeSettings() {
+  $("settingsModal").classList.add("hidden");
+  $("settingsModal").setAttribute("aria-hidden","true");
+  document.body.classList.remove("settings-open");
+  $("settingsOpenBtn").focus();
+}
+function bindNovaSettings() {
+  const bindings = { settingFps:"fps", settingResolution:"resolution", settingRenderMode:"renderMode", settingBrightness:"brightness", settingUiScale:"uiScale", settingAccent:"accent", settingReduceMotion:"reduceMotion", settingVolume:"volume", settingBootSound:"bootSound", settingNoise:"noise", settingAutoGain:"autoGain" };
+  Object.entries(bindings).forEach(([id,key]) => {
+    const el=$(id); if(!el) return;
+    el.addEventListener("input", () => updateNovaSetting(key, el.type==="checkbox" ? el.checked : (el.type==="range" ? Number(el.value) : el.value)));
+    el.addEventListener("change", () => updateNovaSetting(key, el.type==="checkbox" ? el.checked : (el.type==="range" ? Number(el.value) : el.value)));
+  });
+  $("settingsOpenBtn")?.addEventListener("click",openSettings);
+  $("settingsCloseBtn")?.addEventListener("click",closeSettings);
+  $("settingsDoneBtn")?.addEventListener("click",closeSettings);
+  $("settingsModal")?.querySelector("[data-settings-close]")?.addEventListener("click",closeSettings);
+  $("settingsResetBtn")?.addEventListener("click",() => {
+    novaSettings={...NOVA_DEFAULT_SETTINGS}; saveNovaSettings(); applyNovaSettings();
+    if($("settingsSaveState")) $("settingsSaveState").textContent="初期設定に戻しました。";
+    applyNovaMediaSettings();
+  });
+  document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!$("settingsModal").classList.contains("hidden"))closeSettings();});
+}
+function applyNovaMediaSettings() {
+  const track = localStream?.getVideoTracks?.()[0];
+  if (!track?.applyConstraints) return;
+  const height = Number(novaSettings.resolution || 720);
+  const fps = Number(novaSettings.fps || 30);
+  const constraints = { width:{ideal:Math.round(height*16/9)}, height:{ideal:height}, frameRate:{ideal:fps,max:fps} };
+  track.applyConstraints(constraints).then(()=>{ if($("settingsSaveState")) $("settingsSaveState").textContent="カメラ設定を適用しました。"; }).catch(error=>{
+    console.warn("Camera preference could not be applied:",error);
+    if($("settingsSaveState")) $("settingsSaveState").textContent="この端末では一部のカメラ設定を適用できませんでした。";
+  });
+}
+document.addEventListener("DOMContentLoaded", () => { applyNovaSettings(); bindNovaSettings(); });
 
 let authClient = null, authUser = null, pendingAvatarBlob = null, pendingAvatarPreview = null;
 function authMessage(message, isError = false) {
@@ -514,9 +585,12 @@ async function acquireMedia() {
         throw new Error("このブラウザではカメラ機能を利用できません。");
       }
       // iPhoneでは前面カメラを優先し、画面内再生に必要な属性も明示する。
-      const videoConstraints = { facingMode: { ideal: "user" } };
+      const targetHeight = Number(novaSettings.resolution || 720);
+      const targetFps = Number(novaSettings.fps || 30);
+      const videoConstraints = { facingMode: { ideal: "user" }, width: { ideal: Math.round(targetHeight * 16 / 9) }, height: { ideal: targetHeight }, frameRate: { ideal: targetFps, max: targetFps } };
+      const audioConstraints = { echoCancellation: !!novaSettings.noise, noiseSuppression: !!novaSettings.noise, autoGainControl: !!novaSettings.autoGain };
       try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: true });
+        localStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: audioConstraints });
       } catch (combinedError) {
         console.warn("Camera + microphone request failed; retrying camera only:", combinedError);
         try {
@@ -1443,7 +1517,7 @@ const runNovaBoot = () => {
     if(!AudioCtor)return false;
     if(audioContext)return true;
     audioContext=new AudioCtor();
-    masterGain=audioContext.createGain();masterGain.gain.value=.72;
+    masterGain=audioContext.createGain();masterGain.gain.value=(Number(novaSettings.volume ?? 70)/100)*.72;
     const compressor=audioContext.createDynamicsCompressor();
     compressor.threshold.value=-18;compressor.knee.value=16;compressor.ratio.value=4;
     compressor.attack.value=.006;compressor.release.value=.22;
@@ -1485,7 +1559,7 @@ const runNovaBoot = () => {
     source.start(now+at);
   };
   const playBootSound=()=>{
-    if(audioStarted||!audioContext)return;
+    if(audioStarted||!audioContext||!novaSettings.bootSound||Number(novaSettings.volume)<=0)return;
     audioStarted=true;
     // Original layered sci-fi startup score: reactor pulse, harmonic scan,
     // encrypted handshake, then a clean launch signature.
@@ -1525,6 +1599,7 @@ const runNovaBoot = () => {
     t(1318.51,4.3,.8,.045,"sine");
     t(1760,4.42,.62,.025,"sine");
   };
+  window.novaSetBootVolume = (volume, enabled) => { if(masterGain&&audioContext) masterGain.gain.setTargetAtTime(enabled ? (Number(volume)/100)*.72 : 0, audioContext.currentTime, .08); };
   const startButton = $("bootStartButton");
   const startBoot = () => {
     if (boot.dataset.bootStarted === "1") return;
