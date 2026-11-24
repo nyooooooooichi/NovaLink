@@ -900,12 +900,107 @@ function addVideo(id, name, stream, isScreen = false) {
     track.addEventListener("unmute", startPlayback, { once: true });
   });
   if (isScreen) tile.classList.add("has-screen");
+  refreshMeetingPip();
 }
 function toggleFullscreen(element) {
   if (document.fullscreenElement) document.exitFullscreen?.();
   else element.requestFullscreen?.().catch(() => toast("全画面表示を開始できませんでした。"));
 }
 $("selfFullscreen").onclick = () => toggleFullscreen($("selfTile"));
+
+let meetingPipWindow = null;
+function refreshMeetingPip() {
+  const pip = meetingPipWindow;
+  if (!pip || pip.closed) return;
+  const grid = pip.document.getElementById("pipParticipants");
+  if (!grid) return;
+  grid.replaceChildren();
+  const tiles = [...document.querySelectorAll("#videoGrid .video-tile")];
+  tiles.forEach(tile => {
+    const source = tile.id === "selfTile" ? $("localVideo") : tile.querySelector(".camera-feed");
+    const name = tile.querySelector(".video-name")?.textContent || "参加者";
+    const card = pip.document.createElement("article");
+    card.className = "pip-person";
+    if (source?.srcObject?.getVideoTracks?.().some(track => track.readyState === "live")) {
+      const video = pip.document.createElement("video");
+      video.autoplay = true; video.playsInline = true; video.muted = true;
+      video.srcObject = source.srcObject;
+      card.append(video);
+      video.play().catch(() => {});
+    } else {
+      const placeholder = pip.document.createElement("div");
+      placeholder.className = "pip-avatar";
+      placeholder.textContent = Array.from(name.trim())[0] || "N";
+      card.append(placeholder);
+    }
+    const label = pip.document.createElement("span");
+    label.className = "pip-name"; label.textContent = name;
+    card.append(label); grid.append(card);
+  });
+  const count = pip.document.getElementById("pipCount");
+  if (count) count.textContent = tiles.length + " PARTICIPANT" + (tiles.length === 1 ? "" : "S");
+}
+async function openMeetingPip() {
+  if (!("documentPictureInPicture" in window)) {
+    toast("このChromeでは小窓表示に対応していません。Chromeを最新版に更新してください。");
+    return;
+  }
+  if (meetingPipWindow && !meetingPipWindow.closed) {
+    meetingPipWindow.focus();
+    return;
+  }
+  try {
+    meetingPipWindow = await window.documentPictureInPicture.requestWindow({ width: 380, height: 300 });
+    const pip = meetingPipWindow;
+    pip.document.title = "NOVALINK / FLOATING MEETING";
+    const style = pip.document.createElement("style");
+    style.textContent = `
+      *{box-sizing:border-box}
+      body{margin:0;padding:12px;background:radial-gradient(ellipse at 20% 0%,#1d3555,#080e19 72%);color:#edf5ff;font:12px Arial,sans-serif;overflow:hidden}
+      .pip-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+      .pip-brand{font-size:10px;font-weight:800;letter-spacing:.17em;color:#9bcaff}
+      #pipCount{font-size:9px;color:#819bbd;letter-spacing:.08em}
+      #pipParticipants{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:190px;overflow:auto}
+      .pip-person{position:relative;min-width:0;aspect-ratio:4/3;overflow:hidden;border:1px solid #456184;border-radius:11px;background:#101c2e}
+      .pip-person video{width:100%;height:100%;display:block;object-fit:cover}
+      .pip-avatar{width:100%;height:100%;display:grid;place-items:center;font-size:32px;font-weight:700;color:#a9cfff;background:linear-gradient(145deg,#1b385c,#111b30)}
+      .pip-name{position:absolute;left:6px;right:6px;bottom:5px;padding:4px 6px;border-radius:5px;background:#050a12c9;color:#fff;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .pip-controls{display:flex;gap:7px;margin-top:10px}
+      .pip-controls button{flex:1;border:1px solid #3b5679;border-radius:8px;padding:8px 5px;background:#14243a;color:#e7f2ff;font-weight:700;font-size:10px}
+      .pip-controls button.close{border-color:#744b59;background:#321c29;color:#ffdce4}
+      @media(max-width:300px){#pipParticipants{grid-template-columns:1fr}.pip-person{aspect-ratio:16/9}}
+    `;
+    pip.document.head.append(style);
+    const head = pip.document.createElement("header"); head.className = "pip-head";
+    const brand = pip.document.createElement("strong"); brand.className = "pip-brand"; brand.textContent = "NOVA / LIVE";
+    const count = pip.document.createElement("span"); count.id = "pipCount"; count.textContent = "LIVE SESSION";
+    head.append(brand,count);
+    const grid = pip.document.createElement("main"); grid.id = "pipParticipants";
+    const controls = pip.document.createElement("footer"); controls.className = "pip-controls";
+    [["マイク","micBtn"],["カメラ","cameraBtn"],["閉じる","pipClose"]].forEach(([label,id]) => {
+      const button = pip.document.createElement("button"); button.textContent = label;
+      if (id === "pipClose") button.className = "close";
+      button.addEventListener("click", () => id === "pipClose" ? pip.close() : $(id)?.click());
+      controls.append(button);
+    });
+    pip.document.body.append(head,grid,controls);
+    pip.addEventListener("pagehide", () => {
+      meetingPipWindow = null;
+      if ($("meetingPipBtn")) $("meetingPipBtn").classList.remove("active");
+    }, { once:true });
+    $("meetingPipBtn")?.classList.add("active");
+    refreshMeetingPip();
+    toast("フローティング通話を開始しました。");
+  } catch (error) {
+    console.warn("Document Picture-in-Picture could not open:", error);
+    toast("小窓を開けませんでした。Chromeの対応状況を確認してください。");
+  }
+}
+$("meetingPipBtn")?.addEventListener("click", openMeetingPip);
+if ($("meetingPipBtn") && !("documentPictureInPicture" in window)) {
+  $("meetingPipBtn").title = "最新版のChromeで利用できます";
+}
+
 function removePeer(id) {
   const peer = peers.get(id);
   if (peer) {
@@ -925,6 +1020,7 @@ function removePeer(id) {
   peers.delete(id);
   document.getElementById("tile-" + id)?.remove();
   renderParticipants();
+  refreshMeetingPip();
 }
 function updateParticipants(selfName, list) {
   $("selfName").textContent = selfName;
@@ -1561,6 +1657,8 @@ async function cleanupMeetingAndReturnHome() {
   if (screenStream) screenStream.getTracks().forEach(track => track.stop());
   screenStream = null;
   stopScreenQualityMonitor();
+  if (meetingPipWindow && !meetingPipWindow.closed) meetingPipWindow.close();
+  meetingPipWindow = null;
   $("cameraSource").srcObject = null;
   $("localVideo").pause();
   $("localVideo").srcObject = null;
