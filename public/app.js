@@ -50,9 +50,14 @@ async function makePeer(id, name, initiator) {
   const pc = new RTCPeerConnection(config);
   peers.set(id, { pc, name });
   const stream = outgoingStream();
-  stream.getTracks().forEach(track => pc.addTrack(track, stream));
+  const cameraTrack = stream?.getVideoTracks()[0];
+  const audioTracks = stream?.getAudioTracks() || [];
+  if (cameraTrack) pc.addTrack(cameraTrack, new MediaStream([cameraTrack]));
+  audioTracks.forEach(track => pc.addTrack(track, new MediaStream([track])));
+  const screenTransceiver = pc.addTransceiver("video", { direction: "sendrecv" });
+  peers.get(id).screenSender = screenTransceiver.sender;
   pc.onicecandidate = e => { if (e.candidate) socket.emit("signal", { to: id, data: { candidate: e.candidate } }); };
-  pc.ontrack = e => addVideo(id, name, e.streams[0]);
+  pc.ontrack = e => addVideo(id, name, e.streams[0], e.transceiver === screenTransceiver);
   pc.onconnectionstatechange = () => {
     const state = pc.connectionState;
     if (["failed", "closed"].includes(state)) removePeer(id);
@@ -65,17 +70,20 @@ async function makePeer(id, name, initiator) {
   }
   return peers.get(id);
 }
-function addVideo(id, name, stream) {
+function addVideo(id, name, stream, isScreen = false) {
   let tile = document.getElementById("tile-" + id);
   if (!tile) {
     tile = document.createElement("div"); tile.className = "video-tile"; tile.id = "tile-" + id;
-    const video = document.createElement("video"); video.autoplay = true; video.playsInline = true; tile.append(video);
+    const camera = document.createElement("video"); camera.className = "camera-feed"; camera.autoplay = true; camera.playsInline = true;
+    const screen = document.createElement("video"); screen.className = "screen-feed"; screen.autoplay = true; screen.playsInline = true;
+    tile.append(camera, screen);
     const label = document.createElement("span"); label.className = "video-name"; label.textContent = name; tile.append(label);
     const expand = document.createElement("button"); expand.className = "tile-expand"; expand.textContent = "⛶"; expand.title = "全画面表示";
     expand.onclick = () => toggleFullscreen(tile); tile.append(expand);
     $("videoGrid").append(tile);
   }
-  tile.querySelector("video").srcObject = stream;
+  tile.querySelector(isScreen ? ".screen-feed" : ".camera-feed").srcObject = stream;
+  if (isScreen) tile.classList.add("has-screen");
 }
 function toggleFullscreen(element) {
   if (document.fullscreenElement) document.exitFullscreen?.();
@@ -159,11 +167,17 @@ $("shareBtn").onclick = async () => {
     updateBackgroundUI();
     screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
     const track = screenStream.getVideoTracks()[0];
-    for (const { pc } of peers.values()) {
-      const sender = pc.getSenders().find(s => s.track?.kind === "video");
-      if (sender) await sender.replaceTrack(track);
+    for (const peer of peers.values()) {
+      if (peer.screenSender) await peer.screenSender.replaceTrack(track);
     }
-    $("localVideo").srcObject = screenStream;
+    let preview = $("selfTile").querySelector(".self-screen-preview");
+    if (!preview) {
+      preview = document.createElement("video"); preview.className = "self-screen-preview";
+      preview.autoplay = true; preview.playsInline = true; preview.muted = true;
+      $("selfTile").append(preview);
+    }
+    preview.srcObject = screenStream;
+    $("selfTile").classList.add("sharing-screen");
     $("stopShareBtn").classList.remove("hidden"); $("shareBtn").classList.add("active");
     track.onended = stopShare;
   } catch (e) { screenStream = null; toast("画面共有を開始できませんでした。"); }
@@ -172,13 +186,13 @@ $("stopShareBtn").onclick = stopShare;
 async function stopShare() {
   if (!screenStream) return;
   const streamToStop = screenStream; screenStream = null;
-  const stream = outgoingStream(); const cameraTrack = stream?.getVideoTracks()[0] || null;
-  for (const { pc } of peers.values()) {
-    const sender = pc.getSenders().find(s => s.track?.kind === "video");
-    if (sender) await sender.replaceTrack(cameraTrack);
+  for (const peer of peers.values()) {
+    if (peer.screenSender) await peer.screenSender.replaceTrack(null);
   }
   streamToStop.getTracks().forEach(t => t.stop());
-  $("localVideo").srcObject = processedStream || localStream;
+  const preview = $("selfTile").querySelector(".self-screen-preview");
+  if (preview) { preview.srcObject = null; preview.remove(); }
+  $("selfTile").classList.remove("sharing-screen");
   $("stopShareBtn").classList.add("hidden"); $("shareBtn").classList.remove("active");
   toast("画面共有を終了しました。");
 }
