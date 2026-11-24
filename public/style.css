@@ -198,3 +198,41 @@ footer{color:#8c9bb1;border-top-color:#27354a}
  .entry-card,.hero,.eyebrow,.hero h1,.lead,.identity-card,.meeting-head,.participant-bar,.video-area,.chat-panel,.video-tile,.chat-item,.participant-chip,.toast.show,.video-tile.has-screen .camera-feed,.self-tile.sharing-screen .self-screen-preview{animation:none!important}
  .entry-card:hover,.video-tile:hover,.participant-chip:hover,.background-choice:hover{transform:none!important}
 }
+
+/* Account and authentication interface */
+.account-actions{display:flex;align-items:center;gap:10px;margin-left:auto;margin-right:22px}
+.account-identity{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#b9c9df;font-size:11px}
+.account-btn{border:1px solid #52698b;border-radius:9px;padding:10px 15px;background:#1b2a40;color:#eef5ff;font:inherit;font-size:11px;font-weight:700;cursor:pointer;transition:.2s}
+.account-btn:hover{border-color:#91b5ee;transform:translateY(-1px);box-shadow:0 8px 22px #0005}
+.auth-modal{position:fixed;inset:0;z-index:150;display:grid;place-items:center;padding:20px}
+.auth-modal.hidden{display:none}
+.auth-backdrop{position:absolute;inset:0;background:rgba(2,6,14,.78);backdrop-filter:blur(12px)}
+.auth-dialog{position:relative;width:min(460px,100%);max-height:min(88vh,800px);overflow:auto;padding:32px;border:1px solid #435675;border-radius:18px;background:linear-gradient(145deg,#172337,#0d1523);box-shadow:0 28px 90px #000a;animation:novaRiseIn .35s ease both}
+.auth-close{position:absolute;top:14px;right:16px;width:34px;height:34px;border:1px solid #3c4d68;border-radius:9px;background:#1b293d;color:#dce8fa;font-size:22px;cursor:pointer}
+.auth-kicker{font-size:9px;letter-spacing:2.5px;color:#91b2f2;font-weight:800}
+.auth-dialog h2{margin:8px 0;font-size:27px;color:#f3f7ff}
+.auth-description{margin:0 0 22px;color:#aebdd2;font-size:12px;line-height:1.7}
+.auth-provider-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.auth-provider{display:flex;align-items:center;justify-content:center;gap:7px;min-height:45px;border:1px solid #455a78;border-radius:9px;background:#202f45;color:#edf4ff;font:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:.2s}
+.auth-provider:hover{transform:translateY(-2px);border-color:#8aa9d7}
+.provider-symbol{font-weight:900;font-size:15px}
+.auth-or{display:flex;align-items:center;gap:12px;margin:20px 0;color:#8495ae;font-size:10px}
+.auth-or:before,.auth-or:after{content:"";height:1px;flex:1;background:#354660}
+.auth-mode-switch{display:grid;grid-template-columns:1fr 1fr;padding:4px;border:1px solid #354660;border-radius:9px;background:#0c1421;margin-bottom:16px}
+.auth-mode-switch button{border:0;border-radius:6px;padding:9px;background:transparent;color:#aab9cf;font:inherit;font-size:11px;cursor:pointer}
+.auth-mode-switch button.selected{background:#2a4262;color:#fff}
+.auth-form,.profile-editor{display:grid;gap:9px}
+.auth-form label,.profile-editor label:not(.avatar-upload){margin-top:5px;color:#b9c8dc;font-size:10px;font-weight:700}
+.auth-input{width:100%;min-height:43px;padding:11px 12px;border:1px solid #40536f;border-radius:8px;background:#0a1220;color:#f4f7ff;font:inherit;font-size:12px;outline:none}
+.auth-input:focus{border-color:#83a8e5;box-shadow:0 0 0 3px #83a8e522}
+.auth-submit{min-height:45px;margin-top:8px;border:1px solid #477da3;border-radius:9px;background:linear-gradient(110deg,#267d99,#465fba);color:white;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.auth-submit:disabled,.auth-provider:disabled{opacity:.55;cursor:wait}
+.auth-signout{min-height:40px;border:1px solid #684354;border-radius:9px;background:#321e2a;color:#ffdbe4;font:inherit;font-size:11px;cursor:pointer}
+.profile-avatar-wrap{display:grid;justify-items:center;gap:7px;margin:2px 0 12px}
+.profile-avatar-wrap img{width:86px;height:86px;object-fit:cover;border:2px solid #7898c9;border-radius:50%;background:#1b2b43}
+.profile-avatar-wrap span{font-size:8px;letter-spacing:2px;color:#8499b8}
+.avatar-upload{justify-self:center;margin-bottom:8px;padding:9px 13px;border:1px solid #52698b;border-radius:8px;background:#1b2a40;color:#dceaff;font-size:10px;cursor:pointer}
+.auth-message{min-height:18px;margin:14px 0 0;color:#8de2d1;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.auth-message.error{color:#ff9eae}
+.auth-footnote{margin:12px 0 0;color:#7487a2;font-size:9px;line-height:1.6}
+@media(max-width:620px){.account-actions{margin-right:8px;gap:5px}.account-identity{display:none}.account-btn{padding:8px 10px;font-size:10px}.top-note{display:none}.auth-dialog{padding:26px 20px}.auth-provider-grid{gap:5px}.auth-provider{font-size:10px}}
