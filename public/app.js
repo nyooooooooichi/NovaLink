@@ -457,17 +457,15 @@ async function acquireMedia() {
       // iPhoneでは前面カメラを優先し、画面内再生に必要な属性も明示する。
       const videoConstraints = { facingMode: { ideal: "user" } };
       try {
-        localStream = await navigator.mediaDevices.getUserMedia({
-          video: videoConstraints,
-          audio: true
-        });
+        localStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: true });
       } catch (combinedError) {
-        // A denied microphone permission must not prevent the camera preview.
-        console.warn("Combined camera/microphone request failed; retrying camera only:", combinedError);
-        localStream = await navigator.mediaDevices.getUserMedia({
-          video: videoConstraints,
-          audio: false
-        });
+        console.warn("Camera + microphone request failed; retrying camera only:", combinedError);
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
+        } catch (idealCameraError) {
+          console.warn("Ideal front camera request failed; retrying generic camera:", idealCameraError);
+          localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        }
         toast("カメラは接続しました。マイクの許可を確認してください。");
       }
       const source = $("cameraSource");
@@ -617,8 +615,10 @@ async function makePeer(id, name, initiator) {
   const stream = outgoingStream();
   const cameraTrack = stream?.getVideoTracks()[0];
   const audioTracks = stream?.getAudioTracks() || [];
-  if (cameraTrack) pc.addTrack(cameraTrack, new MediaStream([cameraTrack]));
-  audioTracks.forEach(track => pc.addTrack(track, new MediaStream([track])));
+  // Send camera and microphone in the same MediaStream. This keeps the
+  // stream association stable on iOS WebKit and avoids one track replacing another.
+  if (cameraTrack) pc.addTrack(cameraTrack, stream);
+  audioTracks.forEach(track => pc.addTrack(track, stream));
   const screenMediaStream = new MediaStream();
   const screenTransceiver = pc.addTransceiver("video", { direction: "sendrecv", streams: [screenMediaStream] });
   peers.get(id).screenSender = screenTransceiver.sender;
@@ -1192,21 +1192,46 @@ $("copyBtn").onclick = async () => {
   const url = location.origin + "/?room=" + encodeURIComponent(roomId);
   try { await navigator.clipboard.writeText(url); toast("招待リンクをコピーしました"); } catch { toast(url); }
 };
-$("leaveBtn").onclick = async () => {
+async function cleanupMeetingAndReturnHome() {
   await stopBackgroundProcessing();
-  peers.forEach(({pc}) => pc.close()); peers.clear();
-  localStream?.getTracks().forEach(t => t.stop());
-  if (screenStream) screenStream.getTracks().forEach(t => t.stop());
-  socket.disconnect();
-  location.href = "/";
-};
-socket.on("room:closed", ({ message } = {}) => {
-  peers.forEach(({pc}) => pc.close()); peers.clear();
-  localStream?.getTracks().forEach(track => track.stop()); localStream = null;
+  peers.forEach(({ pc, audio }) => {
+    pc.close();
+    if (audio) { audio.pause(); audio.srcObject = null; audio.remove(); }
+  });
+  peers.clear();
+  localStream?.getTracks().forEach(track => track.stop());
+  localStream = null;
   if (screenStream) screenStream.getTracks().forEach(track => track.stop());
-  roomId = null; selfId = null;
+  screenStream = null;
+  $("cameraSource").srcObject = null;
+  $("localVideo").pause();
+  $("localVideo").srcObject = null;
+  document.querySelectorAll("#videoGrid .video-tile:not(#selfTile)").forEach(tile => tile.remove());
+  $("selfTile").classList.remove("sharing-screen");
+  $("stopShareBtn").classList.add("hidden");
+  $("shareBtn").classList.remove("active");
   $("meeting").classList.add("hidden");
+  $("lifeGamePanel").classList.add("hidden");
+  roomId = null; selfId = null; roomRole = null; lifeGameState = null;
   showHome();
+}
+$("leaveBtn").onclick = () => {
+  $("leaveBtn").disabled = true;
+  socket.timeout(5000).emit("room:leave", {}, async () => {
+    await cleanupMeetingAndReturnHome();
+    $("leaveBtn").disabled = false;
+    toast("通話を退出しました。");
+  });
+  setTimeout(async () => {
+    if (!$("meeting").classList.contains("hidden")) {
+      await cleanupMeetingAndReturnHome();
+      $("leaveBtn").disabled = false;
+      toast("通話を退出しました。");
+    }
+  }, 5200);
+};
+socket.on("room:closed", async ({ message } = {}) => {
+  await cleanupMeetingAndReturnHome();
   toast(message || "部屋が終了しました。");
 });
 
