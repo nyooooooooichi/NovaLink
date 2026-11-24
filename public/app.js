@@ -514,7 +514,7 @@ async function acquireMedia() {
         throw new Error("このブラウザではカメラ機能を利用できません。");
       }
       // iPhoneでは前面カメラを優先し、画面内再生に必要な属性も明示する。
-      const videoConstraints = { facingMode: { ideal: "user" }, width: { ideal: 640 }, height: { ideal: 360 }, frameRate: { ideal: 24, max: 30 } };
+      const videoConstraints = { facingMode: { ideal: "user" } };
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: true });
       } catch (combinedError) {
