@@ -1062,34 +1062,182 @@ socket.on("room:closed", ({ message } = {}) => {
 });
 
 
-// Full-screen NovaLink cinematic boot sequence.
+// Cinematic NovaLink boot with user-initiated spatial audio.
 window.addEventListener("DOMContentLoaded", () => {
   initAuth();
   const boot = $("bootScreen");
   if (boot) {
-    boot.classList.add("sequence-start");
-    const status = $("bootStatus");
-    const percent = $("bootPercent");
-    const fill = $("bootProgressFill");
-    const steps = boot.querySelectorAll(".boot-progress-steps span");
+    const startButton = $("bootStartButton");
+    const audioToggle = $("bootAudioToggle");
+    const audioLabel = $("bootAudioLabel");
+    let soundEnabled = true;
+    let audioContext = null;
+    let masterGain = null;
+    let reverb = null;
+    let audioStarted = false;
+
+    try {
+      soundEnabled = localStorage.getItem("novalinkBootSound") !== "off";
+    } catch (_) {}
+    const refreshAudioToggle = () => {
+      if (!audioToggle) return;
+      audioToggle.classList.toggle("is-muted", !soundEnabled);
+      audioToggle.setAttribute("aria-pressed", String(soundEnabled));
+      audioToggle.setAttribute("aria-label", soundEnabled ? "起動音をオフにする" : "起動音をオンにする");
+      if (audioLabel) audioLabel.textContent = soundEnabled ? "SOUND ON" : "SOUND OFF";
+    };
+    refreshAudioToggle();
+
+    const makeAudio = async () => {
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtor) return false;
+      if (!audioContext) {
+        audioContext = new AudioCtor();
+        masterGain = audioContext.createGain();
+        masterGain.gain.value = 0.58;
+        const compressor = audioContext.createDynamicsCompressor();
+        compressor.threshold.value = -20;
+        compressor.knee.value = 18;
+        compressor.ratio.value = 4;
+        compressor.attack.value = 0.008;
+        compressor.release.value = 0.24;
+        reverb = audioContext.createConvolver();
+        const impulseLength = Math.floor(audioContext.sampleRate * 1.7);
+        const impulse = audioContext.createBuffer(2, impulseLength, audioContext.sampleRate);
+        for (let channel = 0; channel < 2; channel++) {
+          const data = impulse.getChannelData(channel);
+          for (let i = 0; i < impulseLength; i++) {
+            const decay = Math.pow(1 - i / impulseLength, 2.8);
+            data[i] = (Math.random() * 2 - 1) * decay * 0.32;
+          }
+        }
+        reverb.buffer = impulse;
+        const wet = audioContext.createGain();
+        wet.gain.value = 0.2;
+        reverb.connect(wet);
+        wet.connect(compressor);
+        masterGain.connect(compressor);
+        compressor.connect(audioContext.destination);
+      }
+      if (audioContext.state === "suspended") await audioContext.resume();
+      return true;
+    };
+    const tone = (frequency, at, duration, volume, type = "sine", endFrequency = null, wet = true) => {
+      if (!audioContext || !masterGain || !soundEnabled) return;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      const now = audioContext.currentTime;
+      osc.type = type;
+      osc.frequency.setValueAtTime(Math.max(20, frequency), now + at);
+      if (endFrequency) osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFrequency), now + at + duration);
+      gain.gain.setValueAtTime(0.0001, now + at);
+      gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume), now + at + Math.min(0.045, duration * 0.2));
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + at + duration);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      if (wet && reverb) gain.connect(reverb);
+      osc.start(now + at);
+      osc.stop(now + at + duration + 0.03);
+    };
+    const noiseSweep = (at, duration, volume, low, high) => {
+      if (!audioContext || !masterGain || !soundEnabled) return;
+      const length = Math.max(1, Math.floor(audioContext.sampleRate * duration));
+      const buffer = audioContext.createBuffer(1, length, audioContext.sampleRate);
+      const channel = buffer.getChannelData(0);
+      for (let i = 0; i < length; i++) channel[i] = (Math.random() * 2 - 1) * (1 - i / length);
+      const source = audioContext.createBufferSource();
+      const filter = audioContext.createBiquadFilter();
+      const gain = audioContext.createGain();
+      const now = audioContext.currentTime;
+      source.buffer = buffer;
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(low, now + at);
+      filter.frequency.exponentialRampToValueAtTime(high, now + at + duration);
+      filter.Q.value = 0.7;
+      gain.gain.setValueAtTime(0.0001, now + at);
+      gain.gain.linearRampToValueAtTime(volume, now + at + duration * 0.22);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + at + duration);
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      if (reverb) gain.connect(reverb);
+      source.start(now + at);
+    };
+    const playBootSound = () => {
+      if (!soundEnabled || !audioContext) return;
+      // 00: Reactor ignition — deep cinematic power-on.
+      tone(42, 0, 1.45, 0.34, "sine", 31, false);
+      tone(86, 0.03, 1.1, 0.13, "triangle", 54);
+      noiseSweep(0.02, 1.25, 0.11, 180, 1250);
+      tone(164.81, 0.48, 1.15, 0.055, "sine");
+      tone(246.94, 0.68, 1.25, 0.045, "sine");
+      // 01: Core lights up — glassy ascending harmonic notes.
+      [261.63, 329.63, 392, 523.25, 659.25].forEach((f, i) => {
+        tone(f, 0.76 + i * 0.105, 0.9, 0.075 - i * 0.006, "sine");
+        tone(f * 2, 0.79 + i * 0.105, 0.58, 0.018, "sine");
+      });
+      // 02: Network synchronization — precise digital pulses and a rising sweep.
+      [0, 0.19, 0.38, 0.57].forEach((t, i) => {
+        tone(880 + i * 180, 1.18 + t, 0.16, 0.045, "sine", 660 + i * 150, false);
+        tone(110 + i * 18, 1.2 + t, 0.2, 0.035, "triangle", null, false);
+      });
+      noiseSweep(1.22, 0.9, 0.055, 500, 5200);
+      // 03: Secure lock — resonant three-note confirmation.
+      tone(523.25, 1.94, 1.25, 0.11, "sine");
+      tone(659.25, 2.02, 1.35, 0.095, "sine");
+      tone(783.99, 2.1, 1.5, 0.085, "sine");
+      tone(1046.5, 2.18, 1.1, 0.035, "sine");
+      tone(55, 1.9, 1.25, 0.18, "sine", 38, false);
+      // 04: Launch — wide rushing air, sub impact and bright release.
+      noiseSweep(2.78, 1.05, 0.19, 240, 9000);
+      tone(73.42, 2.83, 0.95, 0.3, "sine", 29, false);
+      tone(146.83, 2.86, 0.8, 0.12, "triangle", 58);
+      tone(987.77, 3.0, 0.95, 0.055, "sine");
+      tone(1318.51, 3.08, 1.05, 0.035, "sine");
+    };
     const updateBoot = (message, value, activeStep) => {
+      const status = $("bootStatus");
+      const percent = $("bootPercent");
+      const fill = $("bootProgressFill");
+      const steps = boot.querySelectorAll(".boot-progress-steps span");
       if (status) status.textContent = message;
       if (percent) percent.textContent = String(value).padStart(2, "0") + "%";
       if (fill) fill.style.width = value + "%";
       steps.forEach((step, index) => step.classList.toggle("active", index <= activeStep));
     };
-    updateBoot("POWERING NOVA CORE", 12, 0);
-    window.setTimeout(() => updateBoot("SYNCHRONIZING NETWORK", 38, 1), 900);
-    window.setTimeout(() => {
-      boot.classList.add("sequence-lock");
-      updateBoot("SECURE CHANNEL ESTABLISHED", 72, 2);
-    }, 1850);
-    window.setTimeout(() => {
-      boot.classList.add("sequence-launch");
-      updateBoot("WELCOME TO NOVALINK", 100, 2);
-    }, 2850);
-    window.setTimeout(() => boot.classList.add("done"), 3850);
+    audioToggle?.addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      try { localStorage.setItem("novalinkBootSound", soundEnabled ? "on" : "off"); } catch (_) {}
+      refreshAudioToggle();
+    });
+    startButton?.addEventListener("click", async () => {
+      if (audioStarted) return;
+      audioStarted = true;
+      startButton.disabled = true;
+      startButton.classList.add("is-starting");
+      if (soundEnabled) {
+        try {
+          const ready = await makeAudio();
+          if (ready) playBootSound();
+        } catch (error) {
+          console.warn("NovaLink startup audio unavailable:", error);
+        }
+      }
+      boot.classList.add("sequence-start");
+      updateBoot("POWERING NOVA CORE", 12, 0);
+      window.setTimeout(() => updateBoot("SYNCHRONIZING NETWORK", 38, 1), 900);
+      window.setTimeout(() => {
+        boot.classList.add("sequence-lock");
+        updateBoot("SECURE CHANNEL ESTABLISHED", 72, 2);
+      }, 1850);
+      window.setTimeout(() => {
+        boot.classList.add("sequence-launch");
+        updateBoot("WELCOME TO NOVALINK", 100, 2);
+      }, 2850);
+      window.setTimeout(() => boot.classList.add("done"), 3850);
+    });
   }
+
   const glow = $("pointerGlow");
   if (glow && matchMedia("(pointer:fine)").matches) {
     document.addEventListener("pointermove", event => {
