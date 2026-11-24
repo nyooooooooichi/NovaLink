@@ -334,6 +334,34 @@ $("lobbyForm").addEventListener("submit", event => {
 $("lobbyNotifyBtn").addEventListener("click", toggleLobbyNotifications);
 updateLobbyNotifyButton();
 
+function setMainPage(page) {
+  const callHome = $("home");
+  const community = $("communityPage");
+  const browser = $("roomBrowser");
+  if (browser) browser.classList.add("hidden");
+  if (page === "community") {
+    callHome?.classList.add("hidden");
+    community?.classList.remove("hidden");
+  } else {
+    community?.classList.add("hidden");
+    callHome?.classList.remove("hidden");
+  }
+  $("callHomeNav")?.classList.toggle("active", page !== "community");
+  $("communityNav")?.classList.toggle("active", page === "community");
+}
+$("callHomeNav")?.addEventListener("click", () => setMainPage("call"));
+$("communityNav")?.addEventListener("click", () => setMainPage("community"));
+document.querySelectorAll(".password-toggle").forEach(button => {
+  button.addEventListener("click", () => {
+    const input = $(button.dataset.passwordTarget);
+    if (!input) return;
+    const reveal = input.type === "password";
+    input.type = reveal ? "text" : "password";
+    button.textContent = reveal ? "隠す" : "表示";
+    button.setAttribute("aria-label", reveal ? "パスワードを隠す" : "パスワードを表示");
+  });
+});
+
 function toast(message) {
   $("toast").textContent = message;
   $("toast").classList.add("show");
@@ -348,6 +376,9 @@ function showRoomBrowser() {
     return;
   }
   home.classList.add("hidden");
+  $("communityPage")?.classList.add("hidden");
+  $("callHomeNav")?.classList.remove("active");
+  $("communityNav")?.classList.remove("active");
   browser.classList.remove("hidden");
   loadRooms();
 }
@@ -357,6 +388,9 @@ function showHome() {
   const joinPanel = $("roomJoinPanel");
   if (browser) browser.classList.add("hidden");
   if (home) home.classList.remove("hidden");
+  $("communityPage")?.classList.add("hidden");
+  $("callHomeNav")?.classList.add("active");
+  $("communityNav")?.classList.remove("active");
   if (joinPanel) joinPanel.classList.add("hidden");
   selectedRoomId = null;
 }
