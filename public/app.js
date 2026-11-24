@@ -514,7 +514,7 @@ async function acquireMedia() {
         throw new Error("このブラウザではカメラ機能を利用できません。");
       }
       // iPhoneでは前面カメラを優先し、画面内再生に必要な属性も明示する。
-      const videoConstraints = { facingMode: { ideal: "user" } };
+      const videoConstraints = { facingMode: { ideal: "user" }, width: { ideal: 640 }, height: { ideal: 360 }, frameRate: { ideal: 24, max: 30 } };
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: true });
       } catch (combinedError) {
@@ -641,23 +641,46 @@ async function createRoom() {
     button.innerHTML = originalLabel;
   }
 }
+let roomJoinInProgress = false;
 async function joinSelectedRoom() {
+  if (roomJoinInProgress) return;
   if (!selectedRoomId) return toast("参加する部屋を選択してください。");
   const password = $("roomPassword").value;
   if (!password) return toast("パスワードを入力してください。");
   const name = $("displayName").value.trim() || "Guest";
-  if (!await acquireMedia()) return;
-  $("selectedRoomJoinBtn").disabled = true;
-  socket.emit("room:join", { roomId: selectedRoomId, password, name }, result => {
-    $("selectedRoomJoinBtn").disabled = false;
+  const button = $("selectedRoomJoinBtn");
+  const originalLabel = button.textContent;
+  roomJoinInProgress = true;
+  button.disabled = true;
+  button.setAttribute("aria-busy", "true");
+  button.textContent = "カメラを準備中…";
+  try {
+    if (!await acquireMedia()) return;
+    button.textContent = "部屋に接続中…";
+    const result = await new Promise(resolve => {
+      socket.timeout(15000).emit("room:join", { roomId: selectedRoomId, password, name }, (error, response) => {
+        if (error) return resolve({ ok: false, error: "接続に時間がかかっています。通信状態を確認して、もう一度お試しください。" });
+        resolve(response || { ok: false, error: "参加できませんでした。もう一度お試しください。" });
+      });
+    });
     if (!result?.ok) {
-      localStream?.getTracks().forEach(track => track.stop()); localStream = null;
-      $("cameraSource").srcObject = null; $("localVideo").srcObject = null;
+      localStream?.getTracks().forEach(track => track.stop());
+      localStream = null;
+      $("cameraSource").srcObject = null;
+      $("localVideo").srcObject = null;
       return toast(result?.error || "参加できませんでした。");
     }
     $("roomPassword").value = "";
     enterMeeting(result, name, "guest");
-  });
+  } catch (error) {
+    console.error("Room join failed:", error);
+    toast("参加中にエラーが発生しました。通信状態を確認してください。");
+  } finally {
+    roomJoinInProgress = false;
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+    button.textContent = originalLabel;
+  }
 }
 $("hostBtn").onclick = createRoom;
 $("browseRoomsBtn").onclick = showRoomBrowser;
