@@ -893,3 +893,57 @@ footer{color:#8c9bb1;border-top-color:#27354a}
 @media(prefers-reduced-motion:reduce){
   .boot-screen .boot-nebula,.boot-screen .boot-starfield,.boot-screen .boot-grid-floor,.boot-screen .boot-ring,.boot-screen .boot-energy,.boot-screen .boot-core-aura{will-change:auto}
 }
+
+
+/* DESKTOP BOOT PERFORMANCE — preserve the look, reduce simultaneous GPU layers */
+@media (min-width:761px) and (prefers-reduced-motion:no-preference){
+  /* Large blurred layers are static; moving them forces costly full-screen composites. */
+  .boot-screen.sequence-start .boot-nebula-a,
+  .boot-screen.sequence-start .boot-nebula-b{
+    animation:bootNebulaIn 1.8s ease forwards!important;
+  }
+  .boot-screen.sequence-start .boot-starfield{
+    animation:bootStarsIn 1.5s ease forwards!important;
+  }
+  .boot-screen.sequence-start .boot-grid-floor{
+    animation:bootGridIn 1.8s .2s ease forwards!important;
+  }
+  /* Keep one hero orbit rotating; the other two settle into a layered HUD. */
+  .boot-screen.sequence-start .boot-ring-b{
+    animation:bootRingIn 1.8s .16s cubic-bezier(.16,1,.3,1) forwards!important;
+  }
+  .boot-screen.sequence-start .boot-ring-c{
+    animation:bootRingIn 1.9s .28s cubic-bezier(.16,1,.3,1) forwards!important;
+  }
+  .boot-screen.sequence-start .boot-ring-a{
+    animation:bootRingIn 2s .05s cubic-bezier(.16,1,.3,1) forwards,bootRingSpin 42s 2s linear infinite!important;
+  }
+  .boot-screen.sequence-start .boot-core-aura{
+    animation:none!important;
+  }
+  .boot-screen.sequence-start .boot-scanlines{
+    animation:bootScanlineReveal .8s ease forwards!important;
+  }
+  .boot-screen.sequence-start .boot-hud-wave i{
+    animation:none!important;
+    transform:scaleY(.58);
+    opacity:.78;
+  }
+  /* Avoid promoting every decorative layer to its own GPU texture. */
+  .boot-screen .boot-nebula,
+  .boot-screen .boot-starfield,
+  .boot-screen .boot-grid-floor,
+  .boot-screen .boot-ring-b,
+  .boot-screen .boot-ring-c,
+  .boot-screen .boot-energy,
+  .boot-screen .boot-core-aura{
+    will-change:auto;
+  }
+  .boot-screen .boot-ring-a,
+  .boot-screen .boot-core-wrap{
+    will-change:transform,opacity;
+  }
+  .boot-screen .boot-nebula{filter:blur(30px)}
+  .boot-screen .boot-core-glow{filter:blur(6px)}
+  .boot-screen .boot-core-aura{box-shadow:0 0 32px rgba(60,145,255,.09),inset 0 0 22px rgba(89,160,255,.05)}
+}
