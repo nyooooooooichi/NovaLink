@@ -1,5 +1,165 @@
 const socket = io();
 const $ = (id) => document.getElementById(id);
+
+let authClient = null, authUser = null, authMode = "login", pendingAvatarData = null;
+function authMessage(message, isError = false) {
+  const node = $("authMessage");
+  if (!node) return;
+  node.textContent = message;
+  node.classList.toggle("error", isError);
+}
+function setAuthMode(mode) {
+  authMode = mode;
+  $("authLoginMode").classList.toggle("selected", mode === "login");
+  $("authSignupMode").classList.toggle("selected", mode === "signup");
+  $("authUsernameWrap").classList.toggle("hidden", mode !== "signup");
+  $("authUsername").classList.toggle("hidden", mode !== "signup");
+  $("authPassword").autocomplete = mode === "signup" ? "new-password" : "current-password";
+  $("authSubmit").textContent = mode === "signup" ? "アカウントを作成" : "ログイン";
+  authMessage("");
+}
+function openAuthModal() {
+  $("authModal").classList.remove("hidden");
+  $("authModal").setAttribute("aria-hidden", "false");
+  authMessage("");
+}
+function closeAuthModal() {
+  $("authModal").classList.add("hidden");
+  $("authModal").setAttribute("aria-hidden", "true");
+}
+function currentProfileName() {
+  return authUser?.user_metadata?.username || authUser?.user_metadata?.full_name ||
+    authUser?.user_metadata?.name || authUser?.email?.split("@")[0] || "NovaLink User";
+}
+function paintAuthState() {
+  const signedIn = !!authUser;
+  $("authSignedOut").classList.toggle("hidden", signedIn);
+  $("authSignedIn").classList.toggle("hidden", !signedIn);
+  $("accountBtn").textContent = signedIn ? "マイアカウント" : "ログイン / 登録";
+  $("accountIdentity").classList.toggle("hidden", !signedIn);
+  if (signedIn) {
+    const name = currentProfileName();
+    $("accountIdentity").textContent = name;
+    $("profileUsername").value = name;
+    $("profileAvatarPreview").src = authUser.user_metadata?.avatar_data || authUser.user_metadata?.avatar_url || makeAvatarFallback(name);
+    if (!$("displayName").value.trim() || $("displayName").value === "Guest") $("displayName").value = name;
+  }
+}
+function makeAvatarFallback(name) {
+  const letter = (name || "N").trim().charAt(0).toUpperCase() || "N";
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128"><rect width="128" height="128" rx="64" fill="#263b59"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="58" fill="#dcecff">' + letter.replace(/[<>&"]/g, "") + '</text></svg>';
+  return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+}
+async function initAuth() {
+  const config = window.NOVALINK_CONFIG || {};
+  if (!window.supabase?.createClient || !config.supabaseUrl || !config.supabaseAnonKey) {
+    $("accountBtn").title = "認証設定がまだ完了していません";
+    $("accountBtn").addEventListener("click", () => { openAuthModal(); authMessage("Supabaseの接続設定がまだありません。管理者による設定が必要です。", true); });
+    return;
+  }
+  authClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
+  const { data, error } = await authClient.auth.getSession();
+  if (error) console.error("Auth session error", error);
+  authUser = data?.session?.user || null;
+  paintAuthState();
+  authClient.auth.onAuthStateChange((_event, session) => {
+    authUser = session?.user || null;
+    paintAuthState();
+    if (authUser) authMessage("ログインしました。");
+  });
+}
+$("accountBtn").onclick = openAuthModal;
+$("authClose").onclick = closeAuthModal;
+document.querySelectorAll("[data-auth-close]").forEach(el => el.addEventListener("click", closeAuthModal));
+$("authLoginMode").onclick = () => setAuthMode("login");
+$("authSignupMode").onclick = () => setAuthMode("signup");
+document.querySelectorAll("[data-provider]").forEach(button => button.addEventListener("click", async () => {
+  if (!authClient) return authMessage("認証設定がまだ完了していません。", true);
+  const provider = button.dataset.provider;
+  button.disabled = true;
+  const { error } = await authClient.auth.signInWithOAuth({
+    provider,
+    options: { redirectTo: window.location.origin }
+  });
+  button.disabled = false;
+  if (error) authMessage(error.message, true);
+}));
+$("authForm").onsubmit = async event => {
+  event.preventDefault();
+  if (!authClient) return authMessage("認証設定がまだ完了していません。", true);
+  const email = $("authEmail").value.trim();
+  const password = $("authPassword").value;
+  const username = $("authUsername").value.trim();
+  $("authSubmit").disabled = true;
+  authMessage(authMode === "signup" ? "アカウントを作成しています…" : "ログインしています…");
+  try {
+    if (authMode === "signup") {
+      if (!username) throw new Error("ユーザー名を入力してください。");
+      const { data, error } = await authClient.auth.signUp({
+        email, password, options: { data: { username } }
+      });
+      if (error) throw error;
+      if (data.session) authMessage("アカウントを作成しました。");
+      else authMessage("確認メールを送信しました。メール内のリンクから登録を完了してください。");
+    } else {
+      const { error } = await authClient.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      authMessage("ログインしました。");
+    }
+  } catch (error) { authMessage(error.message || "認証に失敗しました。", true); }
+  finally { $("authSubmit").disabled = false; }
+};
+$("profileAvatarFile").onchange = event => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) return authMessage("PNG・JPEG・WebP画像を選択してください。", true);
+  if (file.size > 5 * 1024 * 1024) return authMessage("画像は5MB以下にしてください。", true);
+  const image = new Image();
+  const reader = new FileReader();
+  reader.onload = () => {
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 256; canvas.height = 256;
+      const ctx = canvas.getContext("2d");
+      const scale = Math.max(256 / image.width, 256 / image.height);
+      const width = image.width * scale, height = image.height * scale;
+      ctx.drawImage(image, (256 - width) / 2, (256 - height) / 2, width, height);
+      pendingAvatarData = canvas.toDataURL("image/jpeg", 0.78);
+      $("profileAvatarPreview").src = pendingAvatarData;
+      authMessage("アイコン画像を読み込みました。保存すると反映されます。");
+    };
+    image.onerror = () => authMessage("画像を読み込めませんでした。", true);
+    image.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+};
+$("profileSave").onclick = async () => {
+  if (!authClient || !authUser) return;
+  const username = $("profileUsername").value.trim();
+  if (!username) return authMessage("ユーザー名を入力してください。", true);
+  if (username.length > 24) return authMessage("ユーザー名は24文字以内にしてください。", true);
+  $("profileSave").disabled = true;
+  try {
+    const updates = { username };
+    if (pendingAvatarData) updates.avatar_data = pendingAvatarData;
+    const { data, error } = await authClient.auth.updateUser({ data: updates });
+    if (error) throw error;
+    authUser = data.user;
+    pendingAvatarData = null;
+    paintAuthState();
+    authMessage("プロフィールを保存しました。");
+  } catch (error) { authMessage(error.message || "保存できませんでした。", true); }
+  finally { $("profileSave").disabled = false; }
+};
+$("authSignOut").onclick = async () => {
+  if (!authClient) return;
+  const { error } = await authClient.auth.signOut();
+  if (error) authMessage(error.message, true);
+  else { authUser = null; pendingAvatarData = null; paintAuthState(); authMessage("ログアウトしました。"); }
+};
+
 let localStream = null, screenStream = null, roomId = null, selfId = null;
 const peers = new Map();
 const config = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
@@ -361,6 +521,7 @@ $("roomId").value = new URLSearchParams(location.search).get("room") || "";
 
 // Premium interface motion: pointer light and cinematic intro.
 window.addEventListener("DOMContentLoaded", () => {
+  initAuth();
   const boot = $("bootScreen");
   if (boot) window.setTimeout(() => boot.classList.add("done"), 1050);
   const glow = $("pointerGlow");
