@@ -54,8 +54,10 @@ async function makePeer(id, name, initiator) {
   const audioTracks = stream?.getAudioTracks() || [];
   if (cameraTrack) pc.addTrack(cameraTrack, new MediaStream([cameraTrack]));
   audioTracks.forEach(track => pc.addTrack(track, new MediaStream([track])));
-  const screenTransceiver = pc.addTransceiver("video", { direction: "sendrecv" });
+  const screenMediaStream = new MediaStream();
+  const screenTransceiver = pc.addTransceiver("video", { direction: "sendrecv", streams: [screenMediaStream] });
   peers.get(id).screenSender = screenTransceiver.sender;
+  if (screenStream?.getVideoTracks()[0]) await screenTransceiver.sender.replaceTrack(screenStream.getVideoTracks()[0]);
   pc.onicecandidate = e => { if (e.candidate) socket.emit("signal", { to: id, data: { candidate: e.candidate } }); };
   pc.ontrack = e => addVideo(id, name, e.streams[0], e.transceiver === screenTransceiver);
   pc.onconnectionstatechange = () => {
