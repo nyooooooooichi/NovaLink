@@ -65,8 +65,6 @@ function finishLifePlayer(game, player) {
     game.currentEvent = null;
     game.winnerId = [...game.players].sort((a,b) => b.cash - a.cash)[0]?.id || null;
     lifeLog(game, "全員ゴール！最終資産ランキングが確定しました。");
-  } else {
-    nextLifeTurn(game);
   }
 }
 function resolveLifeTile(game, player, tile) {
@@ -132,10 +130,11 @@ function removeLifePlayer(room, playerId) {
   const [removed] = game.players.splice(index, 1);
   lifeLog(game, removed.name + " がゲームから退出しました。");
   if (game.currentEvent?.playerId === playerId) game.currentEvent = null;
+  const removedCurrentPlayer = index === game.turnIndex;
   if (index < game.turnIndex) game.turnIndex -= 1;
-  else if (index === game.turnIndex && game.status === "playing") game.turnIndex -= 1;
+  else if (removedCurrentPlayer) game.turnIndex -= 1;
   if (!game.players.length) { room.lifeGame = null; return; }
-  if (game.status === "playing") nextLifeTurn(game);
+  if (game.status === "playing" && removedCurrentPlayer) nextLifeTurn(game);
   broadcastLifeState(room);
 }
 
