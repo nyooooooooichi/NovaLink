@@ -1120,9 +1120,6 @@ const runNovaBoot = () => {
     source.connect(filter);filter.connect(gain);gain.connect(masterGain);if(reverb)gain.connect(reverb);
     source.start(now+at);
   };
-  const removeAudioUnlockListeners=()=>{
-    ["pointerdown","touchend","click","keydown"].forEach(name=>document.removeEventListener(name,unlockAudio,true));
-  };
   const playBootSound=()=>{
     if(audioStarted||!audioContext)return;
     audioStarted=true;
