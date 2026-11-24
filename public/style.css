@@ -285,3 +285,64 @@ footer{color:#8c9bb1;border-top-color:#27354a}
 .lobby-form button{flex:none;border:1px solid #5477b1;border-radius:9px;padding:0 18px;background:linear-gradient(110deg,#286f91,#465fba);color:white;font:inherit;font-size:11px;font-weight:800;cursor:pointer}
 .lobby-footnote{margin-top:9px;color:#72839c;font-size:9px;line-height:1.6}
 @media(max-width:620px){.lobby-panel{padding:16px;margin-top:36px}.lobby-head{flex-direction:column}.lobby-notify-btn{align-self:flex-start}.lobby-messages{height:260px}.lobby-form button{padding:0 12px}}
+
+
+/* NOVALINK LIFE — expandable turn-based board game */
+.life-launch-btn{border-color:#7664ba!important;background:linear-gradient(145deg,#30264e,#1a2440)!important;color:#e2d8ff!important}
+.life-game-panel{margin:18px 0 0;padding:clamp(16px,2.4vw,28px);border:1px solid rgba(125,151,207,.34);border-radius:20px;background:linear-gradient(145deg,rgba(15,25,43,.98),rgba(8,14,25,.98));box-shadow:0 28px 85px #0007;animation:heroReveal .45s ease both}
+.life-game-header{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;padding-bottom:19px;border-bottom:1px solid #2b3b55}
+.life-eyebrow{font-size:9px;letter-spacing:2.7px;color:#83ddeb;font-weight:900}
+.life-game-header h2{margin:7px 0 4px;font-size:clamp(23px,4vw,34px);letter-spacing:-1.3px;color:#f3f6ff}
+.life-game-header h2 span{font-size:12px;letter-spacing:0;color:#9babc4;margin-left:8px}
+.life-game-header p{margin:0;color:#899bb6;font-size:11px}
+.life-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 0}
+.life-toolbar>div:first-child{display:grid;grid-template-columns:10px auto;align-items:center;gap:4px 9px}
+.life-status-dot{width:8px;height:8px;border-radius:50%;background:#65e0bd;box-shadow:0 0 12px #65e0bd}
+.life-toolbar strong{font-size:13px;color:#eaf2ff}
+.life-toolbar small{grid-column:2;color:#8294b0;font-size:10px}
+.life-toolbar-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.life-action{border:1px solid #465c7d;border-radius:9px;padding:10px 14px;background:#192943;color:#dbe8fa;font:inherit;font-size:11px;font-weight:800;cursor:pointer}
+.life-action.primary{border-color:#478ca4;background:linear-gradient(110deg,#187f91,#455fbd);color:#fff}
+.life-action.roll{border-color:#b28b47;background:linear-gradient(110deg,#a76b25,#d19a42);color:#fff}
+.life-action:disabled{opacity:.4;cursor:not-allowed}
+.life-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:15px;align-items:start}
+.life-board-wrap,.life-side-card,.life-event-card{border:1px solid #2d405d;border-radius:14px;background:#0b1423;overflow:hidden}
+.life-board-heading{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border-bottom:1px solid #263851;background:#111e32}
+.life-board-heading>div{display:grid;gap:3px}.life-board-heading b{font-size:9px;letter-spacing:2px;color:#a8c8ff}.life-board-heading span,.life-board-heading small{font-size:9px;color:#7f91ac}.life-board-heading small i{color:#68dce7;font-style:normal;margin:0 5px}
+.life-board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;padding:12px;min-height:360px;background:radial-gradient(ellipse at 50% 40%,#172944,#0a1322 78%)}
+.life-tile{position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:7px;min-height:82px;padding:8px 7px;border:1px solid #3a4e6b;border-radius:9px;background:linear-gradient(145deg,#1b2d47,#101d30);overflow:hidden}
+.life-tile:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,#ffffff0a,transparent 55%)}
+.life-tile>small{font-size:8px;letter-spacing:1px;color:#92a7c4}.life-tile>strong{font-size:9px;line-height:1.4;color:#e7efff;overflow-wrap:anywhere}
+.life-tile-salary{border-color:#367b71;background:linear-gradient(145deg,#17463f,#102b30)}
+.life-tile-bonus{border-color:#8b7544;background:linear-gradient(145deg,#493b1d,#29251c)}
+.life-tile-expense{border-color:#824d5a;background:linear-gradient(145deg,#492833,#2b1b2b)}
+.life-tile-choice,.life-tile-career,.life-tile-investment{border-color:#66579c;background:linear-gradient(145deg,#342c58,#1e203c)}
+.life-tile-start,.life-tile-finish{border-color:#4c9ba5;background:linear-gradient(145deg,#1b5961,#173447)}
+.life-tokens{display:flex;flex-wrap:wrap;gap:3px;position:relative;z-index:1}
+.life-token,.life-player-avatar{display:grid;place-items:center;width:19px;height:19px;border-radius:50%;border:1px solid #ffffff80;color:#fff;font-size:9px;font-weight:900;box-shadow:0 2px 8px #0007}
+.life-token-0{background:#e15c78}.life-token-1{background:#448ee0}.life-token-2{background:#35aa88}.life-token-3{background:#9a69d8}.life-token-4{background:#d38b39}.life-token-5{background:#4babbc}.life-token-6{background:#c65eae}.life-token-7{background:#8b9c45}.life-token-8{background:#667eea}.life-token-9{background:#ad654f}
+.life-sidebar{display:grid;gap:12px}
+.life-side-card{padding:13px}
+.life-side-card h3{display:flex;justify-content:space-between;gap:8px;margin:0 0 11px;font-size:10px;letter-spacing:1.5px;color:#a9c9ff}
+.life-side-card h3 span{font-size:9px;letter-spacing:0;color:#8092ad;font-weight:500}
+.life-player-list{display:grid;gap:7px}
+.life-player-card{display:grid;grid-template-columns:25px minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px;border:1px solid #2b3b54;border-radius:9px;background:#111e30}
+.life-player-card.is-active{border-color:#61cbd4;box-shadow:0 0 0 1px #61cbd433,0 0 18px #36b8c21a}
+.life-player-avatar{width:24px;height:24px;font-size:10px}
+.life-player-info{min-width:0;display:grid;gap:3px}.life-player-info strong{font-size:9px;color:#e4edfb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.life-player-info small{font-size:8px;color:#8395b0}
+.life-cash{font-size:9px;color:#8ee0c4;white-space:nowrap}
+.life-event-card{padding:14px;border-color:#8b7046;background:linear-gradient(145deg,#382c1c,#1d1b1a)}
+.life-event-card>small{font-size:8px;letter-spacing:2px;color:#e6bb72;font-weight:900}
+.life-event-card h3{margin:7px 0;color:#fff0d3;font-size:17px}
+.life-event-card>p{margin:0 0 12px;color:#c9b99f;font-size:10px;line-height:1.6}
+.life-event-choices{display:grid;gap:7px}
+.life-choice-btn{display:grid;gap:4px;padding:10px;text-align:left;border:1px solid #806b4c;border-radius:8px;background:#493a27;color:#fff0d3;cursor:pointer}
+.life-choice-btn:hover{border-color:#e7bc70;background:#59452a}
+.life-choice-btn strong{font-size:10px}.life-choice-btn small{font-size:9px;color:#d6c29f;line-height:1.5}
+.life-log{display:grid;gap:8px;max-height:180px;overflow:auto}
+.life-log p{margin:0;padding-bottom:7px;border-bottom:1px solid #26364c;color:#a9b9cf;font-size:9px;line-height:1.6}
+.life-muted{margin:0;color:#778ba7;font-size:10px;line-height:1.6}
+.life-board-empty{grid-column:1/-1;display:grid;place-items:center;min-height:300px;padding:25px;text-align:center;color:#8294ad;font-size:12px;line-height:1.8}
+.life-footnote{margin:12px 0 0;color:#71839e;font-size:9px;line-height:1.6}
+@media(max-width:900px){.life-layout{grid-template-columns:1fr}.life-sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}.life-side-card:first-child{grid-column:1/-1}}
+@media(max-width:620px){.life-game-header{align-items:flex-start}.life-toolbar{align-items:flex-start;flex-direction:column}.life-toolbar-actions{width:100%;justify-content:flex-start}.life-action{flex:1}.life-board{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:8px}.life-tile{min-height:72px;padding:6px}.life-tile>strong{font-size:8px}.life-sidebar{grid-template-columns:1fr}.life-side-card:first-child{grid-column:auto}}
