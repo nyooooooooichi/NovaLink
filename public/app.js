@@ -1123,28 +1123,43 @@ const runNovaBoot = () => {
   const playBootSound=()=>{
     if(audioStarted||!audioContext)return;
     audioStarted=true;
-    // Browsers may keep AudioContext suspended until the first user gesture.
-    // Align the remaining cues to the current visual boot time instead of replaying from the beginning.
-    const elapsed=Math.max(0,(performance.now()-bootStartedAt)/1000);
-    if(elapsed>=3.85)return;
-    const t=(frequency,at,duration,volume,type="sine",endFrequency=null,wet=true)=>{
-      if(at+duration<=elapsed)return;
-      const remaining=Math.max(.04,Math.min(duration,at+duration-elapsed));
-      tone(frequency,Math.max(0,at-elapsed),remaining,volume,type,endFrequency,wet);
-    };
-    const s=(at,duration,volume,low,high)=>{
-      if(at+duration<=elapsed)return;
-      const remaining=Math.max(.04,Math.min(duration,at+duration-elapsed));
-      sweep(Math.max(0,at-elapsed),remaining,volume,low,high);
-    };
-    t(42,0,1.45,.34,"sine",31,false);t(86,.03,1.1,.13,"triangle",54);
-    s(.02,1.25,.11,180,1250);t(164.81,.48,1.15,.055);t(246.94,.68,1.25,.045);
-    [261.63,329.63,392,523.25,659.25].forEach((f,i)=>{t(f,.76+i*.105,.9,.075-i*.006);t(f*2,.79+i*.105,.58,.018);});
-    [0,.19,.38,.57].forEach((v,i)=>{t(880+i*180,1.18+v,.16,.045,"sine",660+i*150,false);t(110+i*18,1.2+v,.2,.035,"triangle",null,false);});
-    s(1.22,.9,.055,500,5200);t(523.25,1.94,1.25,.11);t(659.25,2.02,1.35,.095);
-    t(783.99,2.1,1.5,.085);t(1046.5,2.18,1.1,.035);t(55,1.9,1.25,.18,"sine",38,false);
-    s(2.78,1.05,.19,240,9000);t(73.42,2.83,.95,.3,"sine",29,false);
-    t(146.83,2.86,.8,.12,"triangle",58);t(987.77,3,.95,.055);t(1318.51,3.08,1.05,.035);
+    // Original layered sci-fi startup score: reactor pulse, harmonic scan,
+    // encrypted handshake, then a clean launch signature.
+    const t=(f,at,duration,volume,type="sine",endFrequency=null,wet=true)=>tone(f,at,duration,volume,type,endFrequency,wet);
+    const s=(at,duration,volume,low,high)=>sweep(at,duration,volume,low,high);
+    // Reactor ignition: immediate low-frequency impact and an opening engine bed.
+    t(34,0,2.1,.42,"sine",27,false);
+    t(68,.015,1.65,.18,"triangle",42,false);
+    t(102,.08,1.3,.085,"sawtooth",58);
+    s(.025,1.55,.13,90,1700);
+    t(55,.22,2.7,.11,"sine",49,false);
+    // Core wakes up: glassy harmonic ladder and a subtle shimmer.
+    [130.81,196,261.63,392,523.25,783.99].forEach((f,i)=>{
+      t(f,.72+i*.13,1.25,.072-i*.006,"sine");
+      t(f*2,.78+i*.13,.82,.018,"triangle",null,true);
+    });
+    [0,.16,.32,.48,.64].forEach((v,i)=>{
+      t(740+i*145,1.48+v,.19,.035,"sine",980+i*175,false);
+      t(92+i*13,1.5+v,.23,.055,"triangle",null,false);
+    });
+    s(1.55,1.05,.075,280,6800);
+    // Security handshake: three precise digital pings and a resolved chord.
+    [0,.22,.44].forEach((v,i)=>{
+      t(1174.66-i*130,2.55+v,.16,.052,"sine",null,false);
+      t(587.33-i*65,2.57+v,.24,.045,"triangle",null,true);
+    });
+    t(261.63,3.02,1.35,.105,"sine");
+    t(329.63,3.08,1.42,.095,"sine");
+    t(392,3.14,1.48,.09,"sine");
+    t(523.25,3.2,1.35,.055,"triangle");
+    t(49,3.0,1.55,.2,"sine",32,false);
+    // Launch: rising air sweep, sub impact, then a short signature chime.
+    s(4.02,1.02,.22,160,10500);
+    t(73.42,4.05,1.0,.34,"sine",29,false);
+    t(146.83,4.08,.9,.14,"triangle",58,false);
+    t(987.77,4.22,.72,.065,"sine");
+    t(1318.51,4.3,.8,.045,"sine");
+    t(1760,4.42,.62,.025,"sine");
   };
   const startButton = $("bootStartButton");
   const startBoot = () => {
@@ -1165,10 +1180,11 @@ const runNovaBoot = () => {
     boot.classList.remove("done");
     boot.classList.add("sequence-start");
     updateBoot("POWERING NOVA CORE",12,0);
-    window.setTimeout(()=>updateBoot("SYNCHRONIZING NETWORK",38,1),900);
-    window.setTimeout(()=>{boot.classList.add("sequence-lock");updateBoot("SECURE CHANNEL ESTABLISHED",72,2);},1850);
-    window.setTimeout(()=>{boot.classList.add("sequence-launch");updateBoot("WELCOME TO NOVALINK",100,2);},2850);
-    window.setTimeout(()=>{boot.classList.add("done");},3850);
+    window.setTimeout(()=>updateBoot("SYNCHRONIZING NETWORK",34,1),1150);
+    window.setTimeout(()=>{boot.classList.add("sequence-lock");updateBoot("AUTHENTICATING SECURE CHANNEL",68,2);},2650);
+    window.setTimeout(()=>updateBoot("ALL SYSTEMS NOMINAL",88,2),3650);
+    window.setTimeout(()=>{boot.classList.add("sequence-launch");updateBoot("WELCOME TO NOVALINK",100,2);},4100);
+    window.setTimeout(()=>{boot.classList.add("done");},5150);
   };
   if (startButton) startButton.addEventListener("click", startBoot);
 
