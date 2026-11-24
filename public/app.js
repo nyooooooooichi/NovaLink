@@ -671,7 +671,7 @@ function outgoingStream() { return processedStream || localStream; }
 async function makePeer(id, name, initiator) {
   if (peers.has(id)) return peers.get(id);
   const pc = new RTCPeerConnection(config);
-  peers.set(id, { pc, name });
+  peers.set(id, { pc, name, pendingCandidates: [] });
   const stream = outgoingStream();
   const cameraTrack = stream?.getVideoTracks()[0];
   const audioTracks = stream?.getAudioTracks() || [];
@@ -710,7 +710,17 @@ async function makePeer(id, name, initiator) {
     }
 
     if (track.kind === "video") {
-      addVideo(id, name, incomingStream, e.transceiver === screenTransceiver);
+      const isScreen = e.transceiver === screenTransceiver;
+      addVideo(id, name, incomingStream, isScreen);
+      // WebKit can deliver the track before its first frame is available.
+      // Retry playback when the remote track becomes unmuted.
+      track.addEventListener("unmute", () => {
+        const tile = document.getElementById("tile-" + id);
+        const target = tile?.querySelector(isScreen ? ".screen-feed" : ".camera-feed");
+        if (target && target.srcObject) target.play().catch(error => {
+          console.warn("Remote video playback is still waiting:", error);
+        });
+      });
     }
   };
   pc.onconnectionstatechange = () => {
@@ -759,11 +769,21 @@ function addVideo(id, name, stream, isScreen = false) {
   video.setAttribute("autoplay", "");
   video.setAttribute("playsinline", "");
   video.srcObject = stream;
-  const startPlayback = () => video.play().catch(error => {
-    console.warn("Remote video playback deferred:", error);
+  const startPlayback = () => {
+    if (!video.srcObject) return;
+    video.play().catch(error => {
+      console.warn("Remote video playback deferred:", error);
+    });
+  };
+  // Try immediately and again at the media readiness milestones used by iOS.
+  startPlayback();
+  ["loadedmetadata", "loadeddata", "canplay"].forEach(eventName => {
+    video.addEventListener(eventName, startPlayback, { once: true });
   });
-  if (video.readyState >= HTMLMediaElement.HAVE_METADATA) startPlayback();
-  else video.addEventListener("loadedmetadata", startPlayback, { once: true });
+  video.srcObject.getVideoTracks?.().forEach(track => {
+    if (track.readyState === "live" && !track.muted) startPlayback();
+    track.addEventListener("unmute", startPlayback, { once: true });
+  });
   if (isScreen) tile.classList.add("has-screen");
 }
 function toggleFullscreen(element) {
@@ -1033,11 +1053,27 @@ socket.on("signal", async ({ from, data }) => {
   try {
     if (data.description) {
       await pc.setRemoteDescription(data.description);
+      // ICE candidates may arrive before the offer/answer on slower mobile
+      // networks. Apply queued candidates only after the remote description.
+      const queued = peer.pendingCandidates || [];
+      peer.pendingCandidates = [];
+      for (const candidate of queued) {
+        try { await pc.addIceCandidate(candidate); }
+        catch (candidateError) { console.warn("Queued ICE candidate rejected:", candidateError); }
+      }
       if (data.description.type === "offer") {
-        const answer = await pc.createAnswer(); await pc.setLocalDescription(answer);
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
         socket.emit("signal", { to: from, data: { description: pc.localDescription } });
       }
-    } else if (data.candidate) await pc.addIceCandidate(data.candidate);
+    } else if (data.candidate) {
+      if (pc.remoteDescription?.type) {
+        await pc.addIceCandidate(data.candidate);
+      } else {
+        peer.pendingCandidates ||= [];
+        peer.pendingCandidates.push(data.candidate);
+      }
+    }
   } catch (e) { console.error("WebRTC signaling error", e); }
 });
 function addChat(name, message, mine, at = Date.now()) {
