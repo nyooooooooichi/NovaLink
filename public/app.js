@@ -1066,9 +1066,8 @@ socket.on("room:closed", ({ message } = {}) => {
 const runNovaBoot = () => {
   const boot = $("bootScreen");
   if (!boot || boot.dataset.bootStarted === "1") return;
-  boot.dataset.bootStarted = "1";
   try { initAuth(); } catch (error) { console.error("NovaLink auth initialization:", error); }
-  let audioContext = null, masterGain = null, reverb = null, audioStarted = false;
+  let audioContext = null, masterGain = null, reverb = null, audioStarted = false, bootStartedAt = 0;
   const updateBoot = (message, value, activeStep) => {
     const status=$("bootStatus"), percent=$("bootPercent"), fill=$("bootProgressFill");
     const steps=boot.querySelectorAll(".boot-progress-steps span");
@@ -1150,39 +1149,32 @@ const runNovaBoot = () => {
     s(2.78,1.05,.19,240,9000);t(73.42,2.83,.95,.3,"sine",29,false);
     t(146.83,2.86,.8,.12,"triangle",58);t(987.77,3,.95,.055);t(1318.51,3.08,1.05,.035);
   };
-  const unlockAudio = () => {
-    if(audioStarted)return;
+  const startButton = $("bootStartButton");
+  const startBoot = () => {
+    if (boot.dataset.bootStarted === "1") return;
+    boot.dataset.bootStarted = "1";
+    if (startButton) startButton.disabled = true;
+    // The click/tap is the browser-approved audio gesture. Start sound and visuals in this same event.
+    bootStartedAt = performance.now();
     try {
-      if(!createAudioGraph())return;
-      // Start scheduling sound in the same gesture as resume(); suspended contexts play it as soon as they unlock.
-      const resumed=audioContext.resume();
-      playBootSound();
-      Promise.resolve(resumed).then(()=>{
-        if(audioContext && audioContext.state==="running")removeAudioUnlockListeners();
-      }).catch(error=>{
-        audioStarted=false;
-        console.warn("NovaLink audio resume failed:",error);
-      });
-    } catch(error) { audioStarted=false; console.warn("NovaLink audio could not start:",error); }
-  };
-  // Keep listening until audio actually starts; a blocked autoplay attempt must not consume the gesture.
-  ["pointerdown","touchend","click","keydown"].forEach(name=>document.addEventListener(name,unlockAudio,true));
-  // Try autoplay on browsers that permit it. On iPhone, the gesture listeners above unlock audio.
-  try {
-    if(createAudioGraph()){
-      Promise.resolve(audioContext.resume()).then(()=>{
-        if(audioContext && audioContext.state==="running"){playBootSound();removeAudioUnlockListeners();}
-      }).catch(error=>console.info("NovaLink autoplay blocked; waiting for a tap.",error));
+      if (createAudioGraph()) {
+        const resumed = audioContext.resume();
+        playBootSound();
+        Promise.resolve(resumed).catch(error => console.warn("NovaLink audio resume failed:", error));
+      }
+    } catch (error) {
+      console.warn("NovaLink audio could not start:", error);
     }
-  } catch(error) { console.info("NovaLink autoplay unavailable; waiting for a tap.",error); }
-  // Record the visual timeline so delayed audio permission never causes a late full replay.
-  const bootStartedAt = performance.now();
-  // Visual boot never waits for audio permissions or playback.
-  boot.classList.remove("done");boot.classList.add("sequence-start");updateBoot("POWERING NOVA CORE",12,0);
-  window.setTimeout(()=>updateBoot("SYNCHRONIZING NETWORK",38,1),900);
-  window.setTimeout(()=>{boot.classList.add("sequence-lock");updateBoot("SECURE CHANNEL ESTABLISHED",72,2);},1850);
-  window.setTimeout(()=>{boot.classList.add("sequence-launch");updateBoot("WELCOME TO NOVALINK",100,2);},2850);
-  window.setTimeout(()=>{boot.classList.add("done");},3850);
+    boot.classList.remove("done");
+    boot.classList.add("sequence-start");
+    updateBoot("POWERING NOVA CORE",12,0);
+    window.setTimeout(()=>updateBoot("SYNCHRONIZING NETWORK",38,1),900);
+    window.setTimeout(()=>{boot.classList.add("sequence-lock");updateBoot("SECURE CHANNEL ESTABLISHED",72,2);},1850);
+    window.setTimeout(()=>{boot.classList.add("sequence-launch");updateBoot("WELCOME TO NOVALINK",100,2);},2850);
+    window.setTimeout(()=>{boot.classList.add("done");},3850);
+  };
+  if (startButton) startButton.addEventListener("click", startBoot);
+
 };
 const setupNovaPointerGlow = () => {
   const glow = $("pointerGlow");
