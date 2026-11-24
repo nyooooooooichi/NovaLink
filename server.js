@@ -20,18 +20,23 @@ function roomMembers(roomId) {
 io.on("connection", (socket) => {
   socket.on("room:join", ({ roomId, name, role } = {}, reply = () => {}) => {
     roomId = String(roomId || "").trim().slice(0, 64);
-    name = String(name || "Guest").trim().slice(0, 24) || "Guest";\n    role = role === "host" ? "host" : "guest";\n    if (role === "host" && members.length > 0) return reply({ ok: false, error: "このルームIDは既に使用されています。" });
+    name = String(name || "Guest").trim().slice(0, 24) || "Guest";
+    role = role === "host" ? "host" : "guest";
     if (!roomId) return reply({ ok: false, error: "ルームIDを入力してください。" });
     const members = roomMembers(roomId);
+    if (role === "host" && members.length > 0) return reply({ ok: false, error: "このルームIDは既に使用されています。" });
     if (members.length >= MAX_PEERS) return reply({ ok: false, error: "このルームは満員です（最大10人）。" });
     if (socket.data.roomId) leaveRoom(socket);
     if (!rooms.has(roomId)) rooms.set(roomId, new Set());
     rooms.get(roomId).add(socket.id);
     socket.join(roomId);
     socket.data.roomId = roomId;
-    socket.data.name = name;\n    socket.data.role = role;
+    socket.data.name = name;
+    socket.data.role = role;
     const peers = roomMembers(roomId).filter((id) => id !== socket.id).map((id) => ({
-      id, name: io.sockets.sockets.get(id)?.data.name || "Guest", role: io.sockets.sockets.get(id)?.data.role || "guest"
+      id,
+      name: io.sockets.sockets.get(id)?.data.name || "Guest",
+      role: io.sockets.sockets.get(id)?.data.role || "guest"
     }));
     reply({ ok: true, roomId, peers, selfId: socket.id });
     socket.to(roomId).emit("peer:joined", { id: socket.id, name, role });
