@@ -195,7 +195,9 @@ async function ensureBackgroundEngine() {
   segmentation = new SelfieSegmentation({ locateFile: file => "https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/" + file });
   segmentation.setOptions({ modelSelection: 1 });
   segmentation.onResults(drawBackground);
-  outputCanvas = document.createElement("canvas"); outputCanvas.width = 1280; outputCanvas.height = 720;
+  outputCanvas = document.createElement("canvas");
+  outputCanvas.width = sourceVideo.videoWidth || 1280;
+  outputCanvas.height = sourceVideo.videoHeight || 720;
   outputCtx = outputCanvas.getContext("2d");
   sourceVideo = $("cameraSource");
   processedStream = outputCanvas.captureStream(24);
@@ -234,21 +236,23 @@ function paintVirtualBackground(ctx, width, height) {
 function drawBackground(results) {
   if (!outputCtx || backgroundMode === "none") return;
   const ctx = outputCtx, w = outputCanvas.width, h = outputCanvas.height;
-  ctx.save(); ctx.clearRect(0,0,w,h);
-  if (backgroundMode === "blur") {
-    ctx.filter = "blur(18px)"; ctx.drawImage(results.image, -22, -22, w+44, h+44); ctx.filter = "none";
-  } else paintVirtualBackground(ctx, w, h);
-  ctx.globalCompositeOperation = "destination-over";
+  ctx.save();
+  ctx.globalCompositeOperation = "source-over";
+  ctx.filter = "none";
+  ctx.clearRect(0, 0, w, h);
+  // Isolate the person, then place the chosen background behind them.
   ctx.drawImage(results.image, 0, 0, w, h);
   ctx.globalCompositeOperation = "destination-in";
   ctx.drawImage(results.segmentationMask, 0, 0, w, h);
-  ctx.restore();
-  // Put the segmented person over the chosen background.
   ctx.globalCompositeOperation = "destination-over";
   if (backgroundMode === "blur") {
-    ctx.filter = "blur(18px)"; ctx.drawImage(results.image, -22, -22, w+44, h+44); ctx.filter = "none";
-  } else paintVirtualBackground(ctx, w, h);
-  ctx.globalCompositeOperation = "source-over";
+    ctx.filter = "blur(18px)";
+    ctx.drawImage(results.image, -22, -22, w + 44, h + 44);
+    ctx.filter = "none";
+  } else {
+    paintVirtualBackground(ctx, w, h);
+  }
+  ctx.restore();
 }
 let backgroundLoopTimer = null;
 async function startBackgroundProcessing(mode) {
