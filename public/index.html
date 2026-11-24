@@ -87,24 +87,11 @@
       <button id="authClose" class="auth-close" type="button" aria-label="閉じる">×</button>
       <div class="auth-kicker">NOVALINK ACCOUNT</div>
       <h2 id="authTitle">アカウント</h2>
-      <p class="auth-description">アカウントを作成して、プロフィールを設定できます。</p>
+      <p class="auth-description">Googleアカウントでログインして、プロフィールを設定できます。</p>
       <div id="authSignedOut">
         <div class="auth-provider-grid">
-          <button type="button" class="auth-provider" data-provider="apple"><span class="provider-symbol">●</span> Apple</button>
-          <button type="button" class="auth-provider" data-provider="discord"><span class="provider-symbol">◈</span> Discord</button>
-          <button type="button" class="auth-provider" data-provider="google"><span class="provider-symbol">G</span> Google</button>
+          <button type="button" class="auth-provider" data-provider="google"><span class="provider-symbol">G</span> Googleで続行</button>
         </div>
-        <div class="auth-or"><span>またはメールアドレスで</span></div>
-        <div class="auth-mode-switch"><button id="authLoginMode" class="selected" type="button">ログイン</button><button id="authSignupMode" type="button">新規登録</button></div>
-        <form id="authForm" class="auth-form">
-          <label id="authUsernameWrap" class="hidden" for="authUsername">ユーザー名</label>
-          <input id="authUsername" class="auth-input hidden" maxlength="24" placeholder="ユーザー名" autocomplete="nickname">
-          <label for="authEmail">メールアドレス</label>
-          <input id="authEmail" class="auth-input" type="email" required autocomplete="email" placeholder="name@example.com">
-          <label for="authPassword">パスワード</label>
-          <input id="authPassword" class="auth-input" type="password" required minlength="6" autocomplete="current-password" placeholder="6文字以上">
-          <button id="authSubmit" class="auth-submit" type="submit">ログイン</button>
-        </form>
       </div>
       <div id="authSignedIn" class="hidden">
         <div class="profile-editor">
@@ -118,7 +105,7 @@
         </div>
       </div>
       <p id="authMessage" class="auth-message" role="status"></p>
-      <p class="auth-footnote">外部ログインは各サービスの認証設定が完了すると利用できます。</p>
+      <p class="auth-footnote">GoogleアカウントでNovaLinkにログインできます。</p>
     </div>
   </section>
   <footer><span>© 2026 NovaLink</span><span>MADE FOR MEANINGFUL CONNECTIONS</span></footer>
