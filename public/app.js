@@ -1121,8 +1121,11 @@ const runNovaBoot = () => {
     source.connect(filter);filter.connect(gain);gain.connect(masterGain);if(reverb)gain.connect(reverb);
     source.start(now+at);
   };
+  const removeAudioUnlockListeners=()=>{
+    ["pointerdown","touchend","click","keydown"].forEach(name=>document.removeEventListener(name,unlockAudio,true));
+  };
   const playBootSound=()=>{
-    if(audioStarted||!audioContext||audioContext.state!=="running")return;
+    if(audioStarted||!audioContext)return;
     audioStarted=true;
     tone(42,0,1.45,.34,"sine",31,false);tone(86,.03,1.1,.13,"triangle",54);
     sweep(.02,1.25,.11,180,1250);tone(164.81,.48,1.15,.055);tone(246.94,.68,1.25,.045);
@@ -1132,18 +1135,21 @@ const runNovaBoot = () => {
     tone(783.99,2.1,1.5,.085);tone(1046.5,2.18,1.1,.035);tone(55,1.9,1.25,.18,"sine",38,false);
     sweep(2.78,1.05,.19,240,9000);tone(73.42,2.83,.95,.3,"sine",29,false);
     tone(146.83,2.86,.8,.12,"triangle",58);tone(987.77,3,.95,.055);tone(1318.51,3.08,1.05,.035);
-    ["pointerdown","touchend","click","keydown"].forEach(name=>document.removeEventListener(name,unlockAudio,true));
   };
   const unlockAudio = () => {
     if(audioStarted)return;
     try {
       if(!createAudioGraph())return;
-      // resume() is invoked synchronously inside the user's gesture, as required by iOS Safari.
+      // Start scheduling sound in the same gesture as resume(); suspended contexts play it as soon as they unlock.
       const resumed=audioContext.resume();
+      playBootSound();
       Promise.resolve(resumed).then(()=>{
-        if(audioContext && audioContext.state==="running")playBootSound();
-      }).catch(error=>console.warn("NovaLink audio resume failed:",error));
-    } catch(error) { console.warn("NovaLink audio could not start:",error); }
+        if(audioContext && audioContext.state==="running")removeAudioUnlockListeners();
+      }).catch(error=>{
+        audioStarted=false;
+        console.warn("NovaLink audio resume failed:",error);
+      });
+    } catch(error) { audioStarted=false; console.warn("NovaLink audio could not start:",error); }
   };
   // Keep listening until audio actually starts; a blocked autoplay attempt must not consume the gesture.
   ["pointerdown","touchend","click","keydown"].forEach(name=>document.addEventListener(name,unlockAudio,true));
@@ -1151,7 +1157,7 @@ const runNovaBoot = () => {
   try {
     if(createAudioGraph()){
       Promise.resolve(audioContext.resume()).then(()=>{
-        if(audioContext && audioContext.state==="running")playBootSound();
+        if(audioContext && audioContext.state==="running"){playBootSound();removeAudioUnlockListeners();}
       }).catch(error=>console.info("NovaLink autoplay blocked; waiting for a tap.",error));
     }
   } catch(error) { console.info("NovaLink autoplay unavailable; waiting for a tap.",error); }
