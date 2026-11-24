@@ -324,8 +324,8 @@ $("backgroundUpload").onchange = e => {
   img.src = url;
 };
 $("themeBtn").onclick = () => {
-  document.body.classList.toggle("light-theme");
-  $("themeBtn").textContent = document.body.classList.contains("light-theme") ? "☾ ダーク" : "☀ ライト";
+  document.body.classList.toggle("dark-theme");
+  $("themeBtn").textContent = document.body.classList.contains("dark-theme") ? "☀ ライト" : "◐ ダーク";
 };
 $("copyBtn").onclick = async () => {
   const url = location.origin + "/?room=" + encodeURIComponent(roomId);
