@@ -566,6 +566,51 @@ function lifeMoney(value) {
   return new Intl.NumberFormat("ja-JP").format(value || 0) + "円";
 }
 let lifeLastRollAt = 0;
+let lifeMoveAnimation = null;
+const lifeDiceFaces = ["⚀","⚁","⚂","⚃","⚄","⚅"];
+function animateLifeDice(value, playerName) {
+  const stage = $("lifeDiceStage"), face = $("lifeDice"), caption = $("lifeDiceCaption");
+  if (!stage || !face) return;
+  if (stage._diceTimer) clearInterval(stage._diceTimer);
+  if (stage._diceEnd) clearTimeout(stage._diceEnd);
+  stage.classList.remove("rolling"); void stage.offsetWidth; stage.classList.add("rolling");
+  stage._diceTimer = setInterval(() => { face.textContent = lifeDiceFaces[Math.floor(Math.random()*6)]; }, 65);
+  stage._diceEnd = setTimeout(() => {
+    clearInterval(stage._diceTimer); stage._diceTimer = null;
+    face.textContent = lifeDiceFaces[Math.max(1,Math.min(6,value))-1];
+    caption.textContent = playerName + " · " + value + " マス";
+    stage.classList.remove("rolling");
+  }, 720);
+}
+function animateLifePlayerMove(game) {
+  const move = game && game.lastRoll;
+  if (!move || !Number.isInteger(move.from) || !Number.isInteger(move.to) || move.to <= move.from) return;
+  const board = $("lifeBoard"), player = game.players.find(p=>p.id===move.playerId);
+  const startCell = board && board.querySelector('[data-life-tile="' + move.from + '"]');
+  const endCell = board && board.querySelector('[data-life-tile="' + move.to + '"]');
+  const target = endCell && endCell.querySelector('[data-life-player="' + CSS.escape(move.playerId) + '"]');
+  if (!startCell || !endCell || !target) return;
+  if (lifeMoveAnimation) { lifeMoveAnimation.cancel(); lifeMoveAnimation = null; }
+  const startRect = startCell.getBoundingClientRect();
+  const startX = startRect.left + startRect.width/2 - 17, startY = startRect.top + startRect.height/2 - 17;
+  const ghost = document.createElement("div");
+  ghost.className = "life-moving-token " + target.className;
+  ghost.textContent = (player && player.name || "?").slice(0,1);
+  ghost.style.left = startX + "px"; ghost.style.top = startY + "px";
+  document.body.append(ghost); target.style.visibility = "hidden";
+  const frames = [], distance = move.to - move.from;
+  for (let step=1; step<=distance; step++) {
+    const cell = board.querySelector('[data-life-tile="' + (move.from+step) + '"]');
+    if (!cell) continue;
+    const rect = cell.getBoundingClientRect();
+    const x = rect.left + rect.width/2 - 17 - startX, y = rect.top + rect.height/2 - 17 - startY;
+    frames.push({ transform: "translate3d(" + x + "px," + y + "px,0) scale(" + (step===distance?1.12:1.04) + ")", offset: step/distance });
+  }
+  if (!frames.length) { ghost.remove(); target.style.visibility=""; return; }
+  lifeMoveAnimation = ghost.animate([{transform:"translate3d(0,0,0) scale(.8)"},...frames], {duration:Math.max(500,distance*230),easing:"cubic-bezier(.22,.75,.25,1)",fill:"forwards"});
+  lifeMoveAnimation.onfinish = () => { ghost.remove(); target.style.visibility=""; lifeMoveAnimation=null; };
+  lifeMoveAnimation.oncancel = () => { ghost.remove(); target.style.visibility=""; };
+}
 function renderLifeGame() {
   const game = lifeGameState;
   const create = $("lifeCreateBtn"), join = $("lifeJoinBtn"), ready = $("lifeReadyBtn");
@@ -635,9 +680,7 @@ function renderLifeGame() {
     $("lifeDiceCaption").textContent = game.lastRoll.playerName + " · " + game.lastRoll.value + " マス";
     if (game.lastRoll.at !== lifeLastRollAt) {
       lifeLastRollAt = game.lastRoll.at;
-      diceStage.classList.remove("rolling");
-      void diceStage.offsetWidth;
-      diceStage.classList.add("rolling");
+      animateLifeDice(game.lastRoll.value, game.lastRoll.playerName);
     }
   } else {
     dice.textContent = "⚄"; $("lifeDiceCaption").textContent = "DICE";
@@ -650,6 +693,7 @@ function renderLifeGame() {
     const row = Math.floor(tile.id / boardColumns), column = tile.id % boardColumns;
     cell.style.gridRow = String(row + 1);
     cell.style.gridColumn = String(row % 2 === 0 ? column + 1 : boardColumns - column);
+    cell.dataset.lifeTile = String(tile.id);
     cell.className = "life-tile life-tile-" + tile.type + (game.players.some(p=>p.position===tile.id && p.id===active?.id) ? " is-current-tile" : "");
     const number = document.createElement("small"); number.textContent = tile.id === 0 ? "START" : tile.id === game.board.length - 1 ? "GOAL" : String(tile.id).padStart(2,"0") + " · " + (tileLabels[tile.type] || "マス");
     const title = document.createElement("strong"); title.textContent = tile.title;
@@ -659,7 +703,7 @@ function renderLifeGame() {
       const tokens = document.createElement("div"); tokens.className = "life-tokens";
       occupants.forEach(player => {
         const token = document.createElement("span"); token.className = "life-token life-token-" + (game.players.indexOf(player) % 10);
-        token.title = player.name; token.textContent = (player.name || "?").slice(0,1);
+        token.title = player.name; token.dataset.lifePlayer = player.id; token.textContent = (player.name || "?").slice(0,1);
         tokens.append(token);
       });
       cell.append(tokens);
@@ -701,7 +745,12 @@ function renderLifeGame() {
     }
   }
 }
-socket.on("life:state", game => { lifeGameState = game || null; renderLifeGame(); });
+socket.on("life:state", game => {
+  const previousRollAt = lifeGameState?.lastRoll?.at;
+  lifeGameState = game || null;
+  renderLifeGame();
+  if (game?.lastRoll?.at && game.lastRoll.at !== previousRollAt) requestAnimationFrame(() => animateLifePlayerMove(game));
+});
 window.addEventListener("resize", () => { if (lifeGameState) renderLifeGame(); });
 $("lifeGameBtn").onclick = openLifeGame;
 $("lifeCloseBtn").onclick = () => $("lifeGamePanel").classList.add("hidden");
