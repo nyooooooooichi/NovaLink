@@ -1109,3 +1109,70 @@ footer{color:#8c9bb1;border-top-color:#27354a}
 
 /* HIDE PAGE SWITCHER DURING AN ACTIVE CALL */
 .topbar.is-in-meeting>.main-nav{display:none!important}
+
+
+/* SCREEN SHARE 2.0 — prioritize the shared content while keeping the camera visible. */
+.video-grid:has(.video-tile.has-screen){
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  align-items:start;
+}
+.video-grid:has(.video-tile.has-screen) .video-tile.has-screen{
+  grid-column:1 / -1;
+  width:100%;
+  min-width:0;
+  min-height:min(58vh,720px);
+  aspect-ratio:16/9;
+}
+.video-grid:has(.video-tile.has-screen) .video-tile.has-screen .screen-feed{
+  object-fit:contain;
+  image-rendering:auto;
+}
+.video-grid:has(.self-tile.sharing-screen){
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  align-items:start;
+}
+.self-tile.sharing-screen .self-screen-preview{
+  inset:0;
+  width:100%;
+  height:100%;
+  aspect-ratio:auto;
+  object-fit:contain;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+  background:#050a12;
+}
+.self-tile.sharing-screen #localVideo{
+  inset:auto 12px 12px auto;
+  z-index:5;
+  width:clamp(88px,22%,190px);
+  height:auto;
+  aspect-ratio:4/3;
+  object-fit:cover;
+  border:2px solid rgba(139,190,255,.9);
+  border-radius:10px;
+  box-shadow:0 8px 25px #0009;
+}
+.video-grid:has(.video-tile.has-screen) .video-tile:not(.has-screen),
+.video-grid:has(.self-tile.sharing-screen) .video-tile:not(.self-tile){
+  min-width:0;
+}
+@media(max-width:780px){
+  .video-grid:has(.video-tile.has-screen),
+  .video-grid:has(.self-tile.sharing-screen){
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    padding:9px;
+  }
+  .video-grid:has(.video-tile.has-screen) .video-tile.has-screen,
+  .video-grid:has(.self-tile.sharing-screen) .self-tile.sharing-screen{
+    min-height:42vh;
+    aspect-ratio:16/10;
+  }
+}
+@media(max-width:430px){
+  .video-grid:has(.video-tile.has-screen),
+  .video-grid:has(.self-tile.sharing-screen){
+    grid-template-columns:1fr;
+  }
+}
