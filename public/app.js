@@ -315,6 +315,50 @@ async function toggleLobbyNotifications() {
   }
 }
 socket.on("connect", restorePushSubscription);
+function renderMeetingLobbyMessage(message) {
+  const box = $("meetingLobbyMessages");
+  if (!box || !message) return;
+  box.querySelector(".system-message")?.remove();
+  const row = document.createElement("article");
+  row.className = "lobby-message";
+  const avatar = document.createElement("span");
+  avatar.className = "lobby-message-avatar";
+  avatar.textContent = Array.from((message.name || "G").trim())[0] || "G";
+  const meta = document.createElement("div");
+  meta.className = "lobby-message-meta";
+  const name = document.createElement("strong"); name.textContent = message.name || "Guest";
+  const time = document.createElement("time"); time.textContent = formatLobbyTime(message.at || Date.now());
+  const body = document.createElement("p"); body.textContent = message.text || "";
+  meta.append(name, time); row.append(avatar, meta, body); box.append(row);
+  while (box.children.length > 60) box.firstElementChild.remove();
+  box.scrollTop = box.scrollHeight;
+}
+function setMeetingChatTab(tab) {
+  const isRoom = tab === "room";
+  $("roomChatTab").classList.toggle("active", isRoom);
+  $("homeChatTab").classList.toggle("active", !isRoom);
+  $("roomChatTab").setAttribute("aria-selected", String(isRoom));
+  $("homeChatTab").setAttribute("aria-selected", String(!isRoom));
+  $("meetingChatHeading").innerHTML = isRoom ? 'ROOM CHAT <span>● LIVE</span>' : 'HOME CHAT <span>● COMMUNITY</span>';
+  $("chatMessages").classList.toggle("hidden", !isRoom);
+  $("meetingLobbyMessages").classList.toggle("hidden", isRoom);
+  $("roomEmojiBar").classList.toggle("hidden", !isRoom);
+  $("chatForm").classList.toggle("hidden", !isRoom);
+  $("meetingLobbyForm").classList.toggle("hidden", isRoom);
+  if (isRoom) $("chatInput").focus({ preventScroll: true });
+  else $("meetingLobbyInput").focus({ preventScroll: true });
+}
+$("roomChatTab").addEventListener("click", () => setMeetingChatTab("room"));
+$("homeChatTab").addEventListener("click", () => setMeetingChatTab("home"));
+$("meetingLobbyForm").addEventListener("submit", event => {
+  event.preventDefault();
+  const input = $("meetingLobbyInput");
+  const message = input.value.trim();
+  if (!message) return;
+  socket.emit("lobby:send", { text: message, name: lobbyDisplayName() });
+  input.value = "";
+  input.focus();
+});
 socket.on("lobby:history", messages => {
   const box = $("lobbyMessages");
   if (!box) return;
@@ -328,10 +372,18 @@ socket.on("lobby:history", messages => {
     messages.forEach(renderLobbyMessage);
   }
   lobbySeenInitialHistory = true;
+  const meetingBox = $("meetingLobbyMessages");
+  if (meetingBox) {
+    meetingBox.innerHTML = "";
+    if (!messages?.length) {
+      const empty = document.createElement("div"); empty.className = "system-message";
+      empty.textContent = "まだメッセージはありません。最初のメッセージを送りましょう。"; meetingBox.append(empty);
+    } else messages.forEach(renderMeetingLobbyMessage);
+  }
 });
 socket.on("lobby:message", message => {
   renderLobbyMessage(message);
-
+  renderMeetingLobbyMessage(message);
 });
 $("lobbyForm").addEventListener("submit", event => {
   event.preventDefault();
