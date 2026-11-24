@@ -95,7 +95,7 @@ $("chatForm").onsubmit = e => { e.preventDefault(); const text = $("chatInput").
 $("micBtn").onclick = () => { micOn = !micOn; localStream?.getAudioTracks().forEach(t => t.enabled = micOn); $("micBtn").classList.toggle("active", micOn); };
 $("cameraBtn").onclick = () => { cameraOn = !cameraOn; localStream?.getVideoTracks().forEach(t => t.enabled = cameraOn); $("cameraBtn").classList.toggle("active", cameraOn); };
 $("shareBtn").onclick = async () => {
-  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); return; }
+  if (screenStream) return;
   try {
     screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
     const track = screenStream.getVideoTracks()[0];
@@ -104,17 +104,29 @@ $("shareBtn").onclick = async () => {
       if (sender) await sender.replaceTrack(track);
     }
     $("localVideo").srcObject = screenStream;
+    $("stopShareBtn").classList.remove("hidden");
+    $("shareBtn").classList.add("active");
     track.onended = stopShare;
-  } catch (e) { toast("画面共有を開始できませんでした。"); }
+  } catch (e) {
+    screenStream = null;
+    toast("画面共有を開始できませんでした。");
+  }
 };
+$("stopShareBtn").onclick = stopShare;
 async function stopShare() {
   if (!screenStream) return;
-  const track = localStream.getVideoTracks()[0];
+  const streamToStop = screenStream;
+  screenStream = null;
+  const cameraTrack = localStream?.getVideoTracks()[0] || null;
   for (const { pc } of peers.values()) {
     const sender = pc.getSenders().find(s => s.track?.kind === "video");
-    if (sender) await sender.replaceTrack(track);
+    if (sender) await sender.replaceTrack(cameraTrack);
   }
-  screenStream.getTracks().forEach(t => t.stop()); screenStream = null; $("localVideo").srcObject = localStream;
+  streamToStop.getTracks().forEach(t => t.stop());
+  $("localVideo").srcObject = localStream;
+  $("stopShareBtn").classList.add("hidden");
+  $("shareBtn").classList.remove("active");
+  toast("画面共有を終了しました。");
 }
 $("copyBtn").onclick = async () => { const url = location.origin + "/?room=" + encodeURIComponent(roomId); try { await navigator.clipboard.writeText(url); toast("招待リンクをコピーしました"); } catch { toast(url); } };
 $("leaveBtn").onclick = () => { peers.forEach(({pc}) => pc.close()); peers.clear(); localStream?.getTracks().forEach(t => t.stop()); if (screenStream) screenStream.getTracks().forEach(t => t.stop()); location.href = "/"; };
