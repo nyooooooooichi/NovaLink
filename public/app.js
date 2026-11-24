@@ -147,6 +147,121 @@ let processedStream = null, processing = false, segmentationReady = false;
 let sourceVideo = null, outputCanvas = null, outputCtx = null, frameBusy = false;
 let selectedRoomId = null;
 
+// Site-wide home lobby chat. Messages are kept in server memory (latest 60).
+const lobbyNotifyKey = "novalink-lobby-notifications";
+let lobbyNotificationsEnabled = localStorage.getItem(lobbyNotifyKey) === "on";
+let lobbySeenInitialHistory = false;
+function lobbyDisplayName() {
+  return ($("displayName")?.value || (authUser ? currentProfileName() : "") || "Guest").trim().slice(0, 24) || "Guest";
+}
+function formatLobbyTime(timestamp) {
+  return new Intl.DateTimeFormat("ja-JP", { hour: "2-digit", minute: "2-digit" }).format(new Date(timestamp));
+}
+function renderLobbyMessage(message) {
+  const box = $("lobbyMessages");
+  if (!box || !message) return;
+  const empty = box.querySelector(".lobby-empty");
+  if (empty) empty.remove();
+  const row = document.createElement("article");
+  row.className = "lobby-message";
+  const top = document.createElement("div");
+  top.className = "lobby-message-meta";
+  const name = document.createElement("strong");
+  name.textContent = message.name || "Guest";
+  const time = document.createElement("time");
+  time.dateTime = new Date(message.at).toISOString();
+  time.textContent = formatLobbyTime(message.at);
+  const body = document.createElement("p");
+  body.textContent = message.text || "";
+  top.append(name, time);
+  row.append(top, body);
+  box.append(row);
+  while (box.children.length > 60) box.firstElementChild.remove();
+  box.scrollTop = box.scrollHeight;
+}
+function updateLobbyNotifyButton() {
+  const button = $("lobbyNotifyBtn");
+  const hint = $("lobbyNotifyHint");
+  if (!button || !hint) return;
+  button.textContent = lobbyNotificationsEnabled ? "通知：ON" : "通知：OFF";
+  button.classList.toggle("enabled", lobbyNotificationsEnabled);
+  button.setAttribute("aria-pressed", String(lobbyNotificationsEnabled));
+  if (!("Notification" in window)) {
+    hint.textContent = "このブラウザはデスクトップ通知に対応していません。";
+  } else if (lobbyNotificationsEnabled && Notification.permission === "granted") {
+    hint.textContent = "通知ON：このサイトを開いていて、別タブ・別ウィンドウにいる間に新着をお知らせします。";
+  } else if (lobbyNotificationsEnabled && Notification.permission === "denied") {
+    hint.textContent = "ブラウザ側で通知がブロックされています。サイトの通知許可をブラウザ設定で変更してください。";
+  } else {
+    hint.textContent = "通知をONにすると、このサイトを別タブで開いている間の新着メッセージをお知らせします。";
+  }
+}
+async function toggleLobbyNotifications() {
+  if (!lobbyNotificationsEnabled) {
+    if (!("Notification" in window)) {
+      toast("このブラウザは通知に対応していません。");
+      return;
+    }
+    if (Notification.permission === "denied") {
+      toast("ブラウザ設定でNovaLinkの通知を許可してください。");
+      updateLobbyNotifyButton();
+      return;
+    }
+    const permission = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+    if (permission !== "granted") {
+      toast("通知は許可されませんでした。");
+      updateLobbyNotifyButton();
+      return;
+    }
+    lobbyNotificationsEnabled = true;
+  } else {
+    lobbyNotificationsEnabled = false;
+  }
+  localStorage.setItem(lobbyNotifyKey, lobbyNotificationsEnabled ? "on" : "off");
+  updateLobbyNotifyButton();
+}
+function showLobbyNotification(message) {
+  if (!lobbyNotificationsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
+  if (document.visibilityState === "visible" && document.hasFocus()) return;
+  try {
+    const notification = new Notification("NovaLink｜" + (message.name || "Guest"), {
+      body: message.text,
+      tag: "novalink-lobby-" + message.id,
+      icon: "/favicon.ico"
+    });
+    notification.onclick = () => { window.focus(); notification.close(); };
+  } catch (error) { console.warn("Lobby notification unavailable", error); }
+}
+socket.on("lobby:history", messages => {
+  const box = $("lobbyMessages");
+  if (!box) return;
+  box.innerHTML = "";
+  if (!messages?.length) {
+    const empty = document.createElement("div");
+    empty.className = "lobby-empty";
+    empty.textContent = "まだメッセージはありません。最初のメッセージを送りましょう。";
+    box.append(empty);
+  } else {
+    messages.forEach(renderLobbyMessage);
+  }
+  lobbySeenInitialHistory = true;
+});
+socket.on("lobby:message", message => {
+  renderLobbyMessage(message);
+  if (message.senderId !== socket.id) showLobbyNotification(message);
+});
+$("lobbyForm").addEventListener("submit", event => {
+  event.preventDefault();
+  const input = $("lobbyInput");
+  const message = input.value.trim();
+  if (!message) return;
+  socket.emit("lobby:send", { text: message, name: lobbyDisplayName() });
+  input.value = "";
+  input.focus();
+});
+$("lobbyNotifyBtn").addEventListener("click", toggleLobbyNotifications);
+updateLobbyNotifyButton();
+
 function toast(message) {
   $("toast").textContent = message;
   $("toast").classList.add("show");
