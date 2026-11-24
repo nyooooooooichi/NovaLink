@@ -1127,14 +1127,28 @@ const runNovaBoot = () => {
   const playBootSound=()=>{
     if(audioStarted||!audioContext)return;
     audioStarted=true;
-    tone(42,0,1.45,.34,"sine",31,false);tone(86,.03,1.1,.13,"triangle",54);
-    sweep(.02,1.25,.11,180,1250);tone(164.81,.48,1.15,.055);tone(246.94,.68,1.25,.045);
-    [261.63,329.63,392,523.25,659.25].forEach((f,i)=>{tone(f,.76+i*.105,.9,.075-i*.006);tone(f*2,.79+i*.105,.58,.018);});
-    [0,.19,.38,.57].forEach((t,i)=>{tone(880+i*180,1.18+t,.16,.045,"sine",660+i*150,false);tone(110+i*18,1.2+t,.2,.035,"triangle",null,false);});
-    sweep(1.22,.9,.055,500,5200);tone(523.25,1.94,1.25,.11);tone(659.25,2.02,1.35,.095);
-    tone(783.99,2.1,1.5,.085);tone(1046.5,2.18,1.1,.035);tone(55,1.9,1.25,.18,"sine",38,false);
-    sweep(2.78,1.05,.19,240,9000);tone(73.42,2.83,.95,.3,"sine",29,false);
-    tone(146.83,2.86,.8,.12,"triangle",58);tone(987.77,3,.95,.055);tone(1318.51,3.08,1.05,.035);
+    // Browsers may keep AudioContext suspended until the first user gesture.
+    // Align the remaining cues to the current visual boot time instead of replaying from the beginning.
+    const elapsed=Math.max(0,(performance.now()-bootStartedAt)/1000);
+    if(elapsed>=3.85)return;
+    const t=(frequency,at,duration,volume,type="sine",endFrequency=null,wet=true)=>{
+      if(at+duration<=elapsed)return;
+      const remaining=Math.max(.04,Math.min(duration,at+duration-elapsed));
+      tone(frequency,Math.max(0,at-elapsed),remaining,volume,type,endFrequency,wet);
+    };
+    const s=(at,duration,volume,low,high)=>{
+      if(at+duration<=elapsed)return;
+      const remaining=Math.max(.04,Math.min(duration,at+duration-elapsed));
+      sweep(Math.max(0,at-elapsed),remaining,volume,low,high);
+    };
+    t(42,0,1.45,.34,"sine",31,false);t(86,.03,1.1,.13,"triangle",54);
+    s(.02,1.25,.11,180,1250);t(164.81,.48,1.15,.055);t(246.94,.68,1.25,.045);
+    [261.63,329.63,392,523.25,659.25].forEach((f,i)=>{t(f,.76+i*.105,.9,.075-i*.006);t(f*2,.79+i*.105,.58,.018);});
+    [0,.19,.38,.57].forEach((v,i)=>{t(880+i*180,1.18+v,.16,.045,"sine",660+i*150,false);t(110+i*18,1.2+v,.2,.035,"triangle",null,false);});
+    s(1.22,.9,.055,500,5200);t(523.25,1.94,1.25,.11);t(659.25,2.02,1.35,.095);
+    t(783.99,2.1,1.5,.085);t(1046.5,2.18,1.1,.035);t(55,1.9,1.25,.18,"sine",38,false);
+    s(2.78,1.05,.19,240,9000);t(73.42,2.83,.95,.3,"sine",29,false);
+    t(146.83,2.86,.8,.12,"triangle",58);t(987.77,3,.95,.055);t(1318.51,3.08,1.05,.035);
   };
   const unlockAudio = () => {
     if(audioStarted)return;
@@ -1161,6 +1175,8 @@ const runNovaBoot = () => {
       }).catch(error=>console.info("NovaLink autoplay blocked; waiting for a tap.",error));
     }
   } catch(error) { console.info("NovaLink autoplay unavailable; waiting for a tap.",error); }
+  // Record the visual timeline so delayed audio permission never causes a late full replay.
+  const bootStartedAt = performance.now();
   // Visual boot never waits for audio permissions or playback.
   boot.classList.remove("done");boot.classList.add("sequence-start");updateBoot("POWERING NOVA CORE",12,0);
   window.setTimeout(()=>updateBoot("SYNCHRONIZING NETWORK",38,1),900);
