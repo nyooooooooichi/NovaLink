@@ -545,3 +545,18 @@ footer{color:#8c9bb1;border-top-color:#27354a}
   filter:drop-shadow(0 5px 16px rgba(88,108,220,.24));
 }
 .boot-core:before{z-index:1;pointer-events:none}
+
+
+/* Main navigation and password visibility */
+.topbar{flex-wrap:wrap}
+.main-nav{display:flex;align-items:center;gap:7px;margin-left:auto;margin-right:18px}
+.main-nav-btn{border:1px solid rgba(112,139,190,.24);border-radius:999px;padding:9px 15px;background:rgba(15,24,41,.72);color:#91a0ba;font:600 11px "DM Sans","Noto Sans JP",sans-serif;cursor:pointer;transition:.2s}
+.main-nav-btn:hover,.main-nav-btn.active{color:#eaf0ff;border-color:rgba(117,151,235,.65);background:linear-gradient(120deg,rgba(66,91,157,.32),rgba(95,69,154,.24));box-shadow:0 0 22px rgba(81,110,205,.12)}
+.community-page{max-width:1000px;margin:54px auto 70px;min-height:55vh;animation:heroReveal .55s ease both}
+.community-page .lobby-panel{margin:0 auto}
+.password-field{position:relative;display:flex;align-items:center;width:100%}
+.password-field input{width:100%;padding-right:68px}
+.password-toggle{position:absolute;right:9px;top:50%;transform:translateY(-50%);border:1px solid rgba(115,143,195,.28);border-radius:8px;padding:6px 10px;background:#17243a;color:#aebfe0;font-size:11px;cursor:pointer}
+.password-toggle:hover{background:#223553;color:#fff}
+@media(max-width:780px){.topbar{gap:12px}.main-nav{order:3;width:100%;justify-content:center;margin:4px 0 0}.account-actions{margin-left:auto}}
+@media(max-width:420px){.main-nav-btn{flex:1;padding:9px 8px}.community-page{margin-top:30px}}
