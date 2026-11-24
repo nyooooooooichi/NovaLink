@@ -111,6 +111,16 @@
           <div class="video-grid" id="videoGrid">
             <div class="video-tile self-tile" id="selfTile"><video id="localVideo" autoplay playsinline muted></video><span class="video-name" id="selfName">あなた</span><button class="tile-expand" id="selfFullscreen" title="全画面表示">⛶</button></div>
           </div>
+          <div id="screenQualityPanel" class="screen-quality-panel hidden" aria-live="polite">
+            <div class="screen-quality-heading"><span class="screen-quality-live"></span><b>SCREEN SHARE TELEMETRY</b><span id="screenQualityMode">高画質</span></div>
+            <div class="screen-quality-metrics">
+              <div><small>FPS</small><strong id="screenQualityFps">—</strong></div>
+              <div><small>解像度</small><strong id="screenQualityResolution">—</strong></div>
+              <div><small>送信ビットレート</small><strong id="screenQualityBitrate">—</strong></div>
+              <div><small>往復遅延</small><strong id="screenQualityRtt">—</strong></div>
+              <div><small>パケット損失</small><strong id="screenQualityLoss">—</strong></div>
+            </div>
+          </div>
           <div class="controls">
             <button id="micBtn" class="control-btn active">🎙 <span>マイク</span></button>
             <button id="cameraBtn" class="control-btn active">▣ <span>カメラ</span></button>
