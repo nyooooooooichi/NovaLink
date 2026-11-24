@@ -195,7 +195,14 @@ $("authSignOut").onclick = async () => {
 
 let localStream = null, screenStream = null, roomId = null, selfId = null;
 const peers = new Map();
-const config = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+const config = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun.cloudflare.com:3478" },
+    { urls: "stun:stun1.l.google.com:19302" }
+  ],
+  iceCandidatePoolSize: 8
+};
 let micOn = true, cameraOn = true;
 let segmentation = null, backgroundMode = "none", backgroundImage = null;
 let processedStream = null, processing = false, segmentationReady = false;
@@ -1222,13 +1229,6 @@ $("leaveBtn").onclick = () => {
     $("leaveBtn").disabled = false;
     toast("通話を退出しました。");
   });
-  setTimeout(async () => {
-    if (!$("meeting").classList.contains("hidden")) {
-      await cleanupMeetingAndReturnHome();
-      $("leaveBtn").disabled = false;
-      toast("通話を退出しました。");
-    }
-  }, 5200);
 };
 socket.on("room:closed", async ({ message } = {}) => {
   await cleanupMeetingAndReturnHome();
