@@ -125,3 +125,63 @@ footer{color:#8c9bb1;border-top-color:#27354a}
 .boot-symbol{box-shadow:0 0 35px #426fe844}
 @media(max-width:780px){.meeting-layout{grid-template-columns:1fr}.chat-panel{min-height:280px}.chat-messages{max-height:250px}}
 @media(max-width:620px){.entry-card{padding:22px}.hero h1{letter-spacing:-1.5px}.feature-row{gap:14px}.feature-row span{font-size:8px}}
+
+
+/* Meeting workspace: one-screen layout, no page scrolling. */
+body.meeting-active{height:100dvh;min-height:0;overflow:hidden}
+body.meeting-active .topbar,body.meeting-active footer{display:none}
+body.meeting-active main{width:100%;height:100dvh;max-width:none;margin:0;padding:14px 18px 16px;overflow:hidden}
+body.meeting-active .meeting{width:100%;height:100%;max-width:none;margin:0;display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:10px;overflow:hidden}
+.meeting-head{margin:0;min-height:54px}
+.meeting-head h2{font-size:22px;margin:4px 0 2px}
+.meeting-head .eyebrow{font-size:9px}
+.participant-bar{margin:0;padding:8px 12px;min-height:42px;overflow:hidden}
+.participant-list{min-width:0;overflow:hidden}
+.meeting-layout{min-height:0;height:100%;grid-template-columns:minmax(0,1fr) 300px;gap:12px;overflow:hidden}
+.video-area{position:relative;display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0;min-width:0;overflow:hidden}
+.video-grid{min-height:0;height:100%;padding:10px;gap:9px;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));grid-auto-rows:minmax(0,1fr);align-content:stretch;overflow:hidden}
+.video-tile{min-width:0;min-height:0;aspect-ratio:auto}
+.video-tile video{display:block;object-fit:cover}
+.controls{flex-wrap:nowrap;justify-content:center;gap:6px;padding:9px;min-height:58px}
+.control-btn{white-space:nowrap;min-width:0;padding:9px 10px;font-size:11px}
+.chat-panel{display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;min-height:0;overflow:hidden}
+.chat-heading{padding:15px 15px 12px}
+.chat-messages{min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain;padding:12px}
+.chat-form{padding:10px}
+.background-panel{position:absolute;z-index:8;left:12px;right:12px;bottom:72px;max-height:min(42%,300px);overflow:auto;border:1px solid #435675;border-radius:12px;box-shadow:0 18px 45px #0009}
+body.meeting-active .ambient,body.meeting-active .orbit,body.meeting-active .grid-plane{opacity:.35}
+@media(max-width:900px){
+ body.meeting-active main{padding:10px}
+ .meeting-layout{grid-template-columns:minmax(0,1fr) 250px;gap:8px}
+ .controls{flex-wrap:wrap;min-height:0}
+ .control-btn{padding:8px}
+}
+@media(max-width:680px){
+ body.meeting-active main{padding:8px}
+ body.meeting-active .meeting{grid-template-rows:auto auto minmax(0,1fr);gap:7px}
+ .meeting-head{min-height:44px}
+ .meeting-head h2{font-size:17px}
+ .meeting-meta{gap:5px}
+ .connection-pill,.count-pill{padding:7px 9px;font-size:9px}
+ .participant-bar{padding:6px 8px;min-height:36px}
+ .participant-title{font-size:9px}
+ .participant-chip{font-size:9px;padding:4px 7px}
+ .meeting-layout{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) 165px;gap:7px}
+ .video-grid{padding:6px;gap:5px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+ .controls{gap:4px;padding:6px;min-height:0}
+ .control-btn{font-size:10px;padding:7px 8px}
+ .chat-panel{min-height:0}
+ .chat-heading{padding:8px 10px;font-size:9px}
+ .chat-messages{padding:7px}
+ .chat-form{padding:6px}
+ .emoji-bar{padding:4px}
+ .background-panel{left:7px;right:7px;bottom:64px;max-height:45%}
+}
+@media(max-height:620px) and (min-width:681px){
+ body.meeting-active main{padding-top:7px;padding-bottom:7px}
+ .meeting-head{min-height:42px}
+ .participant-bar{min-height:34px;padding:5px 10px}
+ .video-grid{padding:6px}
+ .controls{min-height:46px;padding:5px}
+ .control-btn{padding:6px 8px}
+}
