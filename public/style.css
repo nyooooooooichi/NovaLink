@@ -856,3 +856,40 @@ footer{color:#8c9bb1;border-top-color:#27354a}
 }
 @media(max-height:620px) and (min-width:761px){.boot-hud-left,.boot-hud-right{display:none}.boot-hud-top{top:12px}.boot-hud-bottom{bottom:12px}}
 @media(prefers-reduced-motion:reduce){.boot-hud-wave i{animation:none!important}.boot-screen.sequence-start .boot-hud{opacity:.9}}
+
+
+/* PERFORMANCE PASS — keep the cinematic boot smooth on desktop GPUs */
+.boot-screen .boot-nebula{
+  filter:blur(48px);
+  transform:translate3d(0,0,0);
+  will-change:transform,opacity;
+}
+.boot-screen .boot-starfield,
+.boot-screen .boot-grid-floor,
+.boot-screen .boot-ring,
+.boot-screen .boot-energy,
+.boot-screen .boot-core-aura,
+.boot-screen .boot-center-stage{
+  backface-visibility:hidden;
+  transform-style:preserve-3d;
+}
+.boot-screen .boot-starfield{will-change:transform,opacity}
+.boot-screen .boot-grid-floor{will-change:transform,opacity}
+.boot-screen .boot-ring{will-change:transform,opacity}
+.boot-screen .boot-energy{filter:none;will-change:transform,opacity}
+.boot-screen .boot-core-wrap{filter:none!important;will-change:transform,opacity}
+.boot-screen .boot-core-glow{filter:blur(10px)}
+.boot-screen .boot-core-aura{will-change:transform}
+.boot-screen .boot-hud-left,
+.boot-screen .boot-hud-right{backdrop-filter:none;-webkit-backdrop-filter:none}
+.boot-screen .boot-scanlines{background:repeating-linear-gradient(180deg,transparent 0 4px,rgba(117,177,255,.028) 5px,transparent 6px)}
+.boot-screen.sequence-start .boot-scanlines{animation:bootScanlineReveal .8s ease forwards}
+.boot-screen.sequence-start .boot-hud-wave i{animation-name:bootWaveScale}
+@keyframes bootWaveScale{from{transform:scaleY(.2);opacity:.45}to{transform:scaleY(1);opacity:1}}
+@media(min-width:761px){
+  .boot-screen .boot-nebula{filter:blur(42px)}
+  .boot-screen .boot-core-aura{box-shadow:0 0 55px rgba(60,145,255,.12),inset 0 0 38px rgba(89,160,255,.08)}
+}
+@media(prefers-reduced-motion:reduce){
+  .boot-screen .boot-nebula,.boot-screen .boot-starfield,.boot-screen .boot-grid-floor,.boot-screen .boot-ring,.boot-screen .boot-energy,.boot-screen .boot-core-aura{will-change:auto}
+}
