@@ -303,7 +303,7 @@ function closeRoom(roomId, reason = "ホストが退出したため、部屋が�
   rooms.delete(roomId);
   broadcastRoomList();
 }
-function leaveRoom(socket) {
+function leaveRoom(socket, preservePushContext = false) {
   const roomId = socket.data.roomId;
   if (!roomId) return;
   const room = rooms.get(roomId);
@@ -318,7 +318,7 @@ function leaveRoom(socket) {
   socket.data.roomId = null;
   socket.data.role = null;
   const pushRecord = socket.data.pushEndpoint ? pushSubscriptions.get(socket.data.pushEndpoint) : null;
-  if (pushRecord) pushRecord.roomId = null;
+  if (pushRecord && !preservePushContext) pushRecord.roomId = null;
   if (room.members.size === 0) rooms.delete(roomId);
   else {
     socket.to(roomId).emit("peer:left", { id: socket.id });
@@ -537,7 +537,7 @@ io.on("connection", socket => {
     });
     notifyPush({ title: "NovaLink｜" + (socket.data.name || "Guest"), body: message, url: "/" }, record => record.roomId === socket.data.roomId, socket.id);
   });
-  socket.on("disconnect", () => { lastLobbyMessageAt.delete(socket.id); leaveRoom(socket); });
+  socket.on("disconnect", () => { lastLobbyMessageAt.delete(socket.id); leaveRoom(socket, true); });
 });
 
 server.listen(PORT, () => console.log(`NovaLink running on port ${PORT}`));
