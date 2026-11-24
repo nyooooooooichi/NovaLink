@@ -766,3 +766,39 @@ footer{color:#8c9bb1;border-top-color:#27354a}
 @keyframes bootStartRotate{to{transform:rotate(360deg)}}
 @media(max-width:620px){.boot-start-button{width:166px;height:166px}.boot-start-core{width:58px;height:58px;font-size:34px}}
 @media(prefers-reduced-motion:reduce){.boot-start-button:before,.boot-start-button:after,.boot-start-orbit{animation:none}}
+
+
+/* START GATE: keep the cinematic logo/content hidden until the user starts */
+.boot-screen:not(.sequence-start) .boot-pretitle,
+.boot-screen:not(.sequence-start) .boot-core-wrap,
+.boot-screen:not(.sequence-start) .boot-word,
+.boot-screen:not(.sequence-start) .boot-tagline,
+.boot-screen:not(.sequence-start) .boot-progress,
+.boot-screen:not(.sequence-start) .boot-bottom{
+  opacity:0!important;visibility:hidden!important;pointer-events:none!important;
+  transform:translateY(12px);filter:blur(8px)
+}
+.boot-screen:not(.sequence-start) .boot-core-glow{opacity:0!important}
+.boot-start-button{
+  width:clamp(190px,24vw,230px);height:clamp(190px,24vw,230px);
+  border:1px solid rgba(166,194,255,.72);
+  background:
+    radial-gradient(circle at 50% 28%,rgba(76,111,190,.42),transparent 46%),
+    linear-gradient(145deg,rgba(18,31,61,.98),rgba(5,10,23,.99));
+  box-shadow:
+    0 0 0 7px rgba(100,139,235,.07),
+    0 0 0 1px rgba(160,187,255,.32),
+    0 18px 70px rgba(0,0,0,.62),
+    0 0 58px rgba(73,113,226,.38),
+    inset 0 1px 0 rgba(255,255,255,.2),
+    inset 0 -22px 42px rgba(37,65,133,.22);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+}
+.boot-start-button:focus-visible{outline:2px solid #c7d9ff;outline-offset:12px}
+.boot-start-core{
+  border-radius:19px;
+  background:linear-gradient(145deg,#4168b5 0%,#1b2d58 55%,#101a35 100%);
+  box-shadow:0 0 0 5px rgba(135,166,255,.08),0 0 34px rgba(105,145,255,.62),inset 0 1px rgba(255,255,255,.34);
+}
+.boot-start-label{margin-top:3px;text-shadow:0 2px 18px rgba(146,177,255,.45)}
+.boot-start-sub{color:rgba(190,207,245,.78)}
