@@ -595,11 +595,12 @@ function renderLifeGame() {
   start.disabled = game.players.length < 2 || !game.players.every(player => player.ready);
   roll.hidden = !(game.status === "playing" && me && active?.id === selfId && !game.currentEvent);
   board.innerHTML = "";
+  const boardColumns = window.matchMedia("(max-width: 620px)").matches ? 4 : 8;
   game.board.forEach(tile => {
     const cell = document.createElement("div");
-    const row = Math.floor(tile.id / 8), column = tile.id % 8;
+    const row = Math.floor(tile.id / boardColumns), column = tile.id % boardColumns;
     cell.style.gridRow = String(row + 1);
-    cell.style.gridColumn = String(row % 2 === 0 ? column + 1 : 8 - column);
+    cell.style.gridColumn = String(row % 2 === 0 ? column + 1 : boardColumns - column);
     cell.className = "life-tile life-tile-" + tile.type;
     const number = document.createElement("small"); number.textContent = tile.id === 0 ? "START" : tile.id === game.board.length - 1 ? "GOAL" : String(tile.id).padStart(2,"0");
     const title = document.createElement("strong"); title.textContent = tile.title;
@@ -652,6 +653,7 @@ function renderLifeGame() {
   }
 }
 socket.on("life:state", game => { lifeGameState = game || null; renderLifeGame(); });
+window.addEventListener("resize", () => { if (lifeGameState) renderLifeGame(); });
 $("lifeGameBtn").onclick = openLifeGame;
 $("lifeCloseBtn").onclick = () => $("lifeGamePanel").classList.add("hidden");
 $("lifeCreateBtn").onclick = () => lifeRequest("life:create");
