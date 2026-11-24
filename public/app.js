@@ -1119,8 +1119,7 @@ const runNovaBoot = () => {
   const unlockAudio=()=>{if(!audioStarted&&!bootFinished)void startAudio();};
   ["pointerdown","touchstart","keydown"].forEach(name=>window.addEventListener(name,unlockAudio,{once:true,passive:true}));
 };
-if(document.readyState==="loading")window.addEventListener("DOMContentLoaded",runNovaBoot,{once:true});else runNovaBoot();
-
+const setupNovaPointerGlow = () => {
   const glow = $("pointerGlow");
   if (glow && matchMedia("(pointer:fine)").matches) {
     document.addEventListener("pointermove", event => {
@@ -1130,4 +1129,11 @@ if(document.readyState==="loading")window.addEventListener("DOMContentLoaded",ru
     }, { passive: true });
     document.addEventListener("pointerleave", () => glow.style.opacity = "0");
   }
-});
+};
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", runNovaBoot, { once: true });
+  window.addEventListener("DOMContentLoaded", setupNovaPointerGlow, { once: true });
+} else {
+  runNovaBoot();
+  setupNovaPointerGlow();
+}
