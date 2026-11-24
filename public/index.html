@@ -11,7 +11,7 @@
 </head>
 <body class="dark-theme">
   <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div><div class="grid-plane"></div><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="pointer-glow" id="pointerGlow"></div><div class="boot-screen" id="bootScreen"><div class="boot-symbol">N</div><div class="boot-word">NOVA<span>LINK</span></div><div class="boot-line"><i></i></div><small>ESTABLISHING CONNECTION</small></div>
-  <header class="topbar"><a class="brand" href="/"><span class="brand-mark">N</span><span>Nova<span class="brand-light">Link</span></span></a><span class="top-note"><i></i> NEXT GENERATION COMMUNICATION <b>● ONLINE</b></span></header>
+  <header class="topbar"><a class="brand" href="/"><span class="brand-mark">N</span><span>Nova<span class="brand-light">Link</span></span></a><div class="account-actions"><span id="accountIdentity" class="account-identity hidden"></span><button id="accountBtn" class="account-btn" type="button">ログイン / 登録</button></div><span class="top-note"><i></i> NEXT GENERATION COMMUNICATION <b>● ONLINE</b></span></header>
   <main>
     <section class="hero" id="home">
       <div class="eyebrow"><span></span> THE FUTURE OF CONNECTION <b> / 01</b></div>
@@ -81,9 +81,51 @@
       </div>
     </section>
   </main>
+  <section id="authModal" class="auth-modal hidden" aria-hidden="true">
+    <div class="auth-backdrop" data-auth-close></div>
+    <div class="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <button id="authClose" class="auth-close" type="button" aria-label="閉じる">×</button>
+      <div class="auth-kicker">NOVALINK ACCOUNT</div>
+      <h2 id="authTitle">アカウント</h2>
+      <p class="auth-description">アカウントを作成して、プロフィールを設定できます。</p>
+      <div id="authSignedOut">
+        <div class="auth-provider-grid">
+          <button type="button" class="auth-provider" data-provider="apple"><span class="provider-symbol">●</span> Apple</button>
+          <button type="button" class="auth-provider" data-provider="discord"><span class="provider-symbol">◈</span> Discord</button>
+          <button type="button" class="auth-provider" data-provider="google"><span class="provider-symbol">G</span> Google</button>
+        </div>
+        <div class="auth-or"><span>またはメールアドレスで</span></div>
+        <div class="auth-mode-switch"><button id="authLoginMode" class="selected" type="button">ログイン</button><button id="authSignupMode" type="button">新規登録</button></div>
+        <form id="authForm" class="auth-form">
+          <label id="authUsernameWrap" class="hidden" for="authUsername">ユーザー名</label>
+          <input id="authUsername" class="auth-input hidden" maxlength="24" placeholder="ユーザー名" autocomplete="nickname">
+          <label for="authEmail">メールアドレス</label>
+          <input id="authEmail" class="auth-input" type="email" required autocomplete="email" placeholder="name@example.com">
+          <label for="authPassword">パスワード</label>
+          <input id="authPassword" class="auth-input" type="password" required minlength="6" autocomplete="current-password" placeholder="6文字以上">
+          <button id="authSubmit" class="auth-submit" type="submit">ログイン</button>
+        </form>
+      </div>
+      <div id="authSignedIn" class="hidden">
+        <div class="profile-editor">
+          <div class="profile-avatar-wrap"><img id="profileAvatarPreview" alt="プロフィールアイコン"><span>PROFILE</span></div>
+          <label class="avatar-upload" for="profileAvatarFile">アイコン画像を選択</label>
+          <input id="profileAvatarFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+          <label for="profileUsername">ユーザー名</label>
+          <input id="profileUsername" class="auth-input" maxlength="24" placeholder="ユーザー名">
+          <button id="profileSave" class="auth-submit" type="button">プロフィールを保存</button>
+          <button id="authSignOut" class="auth-signout" type="button">ログアウト</button>
+        </div>
+      </div>
+      <p id="authMessage" class="auth-message" role="status"></p>
+      <p class="auth-footnote">外部ログインは各サービスの認証設定が完了すると利用できます。</p>
+    </div>
+  </section>
   <footer><span>© 2026 NovaLink</span><span>MADE FOR MEANINGFUL CONNECTIONS</span></footer>
   <div id="toast" class="toast" role="status"></div>
   <video id="cameraSource" autoplay playsinline muted class="source-video"></video>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
   <script src="/socket.io/socket.io.js"></script><script src="/app.js"></script>
 </body></html>
