@@ -1078,7 +1078,7 @@ footer{color:#8c9bb1;border-top-color:#27354a}
   padding:11px 8px;
   color:#91a3bd;
   background:#101b2d;
-  font:600 12px/1.3 inherit;
+  font-family:inherit;font-size:12px;font-weight:600;line-height:1.3;
   cursor:pointer;
   transition:background .2s,border-color .2s,color .2s,box-shadow .2s;
 }
