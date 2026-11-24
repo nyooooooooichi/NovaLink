@@ -135,3 +135,66 @@ footer{color:#8c9bb1;border-top-color:#27354a}
 .video-tile.has-screen .camera-feed{position:absolute;z-index:2;right:12px;bottom:12px;width:clamp(88px,22%,190px);height:auto;aspect-ratio:4/3;object-fit:cover;border:2px solid rgba(139,190,255,.9);border-radius:10px;box-shadow:0 8px 25px #0009}
 .video-tile.has-screen .video-name{z-index:3}
 .self-tile.sharing-screen .self-screen-preview{position:absolute;z-index:4;right:12px;bottom:12px;width:clamp(88px,22%,190px);height:auto;aspect-ratio:4/3;object-fit:cover;border:2px solid rgba(139,190,255,.9);border-radius:10px;box-shadow:0 8px 25px #0009;background:#080d19}
+
+
+/* NOVALINK MOTION UPGRADE — preserve the existing color palette. */
+@keyframes novaRiseIn{0%{opacity:0;transform:translate3d(0,26px,0) scale(.985);filter:blur(5px)}100%{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}}
+@keyframes novaBorderBreathe{0%,100%{box-shadow:0 15px 36px rgba(0,0,0,.24),inset 0 0 0 1px rgba(255,255,255,0)}50%{box-shadow:0 18px 42px rgba(0,0,0,.3),inset 0 0 0 1px rgba(255,255,255,.07)}}
+@keyframes novaSweep{0%{transform:translateX(-150%) skewX(-18deg);opacity:0}18%{opacity:.32}65%{opacity:.12}100%{transform:translateX(350%) skewX(-18deg);opacity:0}}
+@keyframes novaPulse{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.045);filter:brightness(1.16)}}
+@keyframes novaChipIn{0%{opacity:0;transform:translateY(7px) scale(.94)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes novaMessageIn{0%{opacity:0;transform:translateY(10px) scale(.985)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes novaVideoGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,0),0 12px 30px #0005}50%{box-shadow:0 0 0 1px rgba(255,255,255,.13),0 16px 38px #0007}}
+@keyframes novaBootOrbit{from{transform:rotate(0deg) scale(1)}to{transform:rotate(360deg) scale(1.025)}}
+@keyframes novaScan{0%{transform:translateY(-120%);opacity:0}12%{opacity:.12}88%{opacity:.12}100%{transform:translateY(520%);opacity:0}}
+
+.hero{animation:novaRiseIn .85s cubic-bezier(.16,1,.3,1) both}
+.eyebrow{animation:novaRiseIn .65s .08s both}
+.hero h1{animation:novaRiseIn .8s .14s both}
+.lead{animation:novaRiseIn .8s .2s both}
+.identity-card{animation:novaRiseIn .75s .26s both;transition:transform .3s cubic-bezier(.2,.8,.2,1),border-color .3s,box-shadow .3s}
+.identity-card:focus-within{transform:translateY(-3px)}
+.entry-card{will-change:transform;animation:novaRiseIn .8s cubic-bezier(.16,1,.3,1) both,novaBorderBreathe 6s 1s ease-in-out infinite}
+.entry-card:nth-child(2){animation-delay:.14s,1.14s}
+.entry-card:hover{transform:translateY(-7px) perspective(900px) rotateX(1.2deg) scale(1.012);transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s,border-color .35s}
+.entry-icon{transition:transform .45s cubic-bezier(.2,.8,.2,1),filter .45s}
+.entry-card:hover .entry-icon{transform:translateY(-4px) rotate(-7deg) scale(1.08);filter:brightness(1.16)}
+.primary-btn,.secondary-btn,.control-btn,.icon-btn,.background-choice,.emoji-bar button{position:relative;isolation:isolate;overflow:hidden;transition:transform .22s cubic-bezier(.2,.8,.2,1),filter .22s,box-shadow .22s,border-color .22s}
+.primary-btn:after,.secondary-btn:after,.control-btn:after,.icon-btn:after,.background-choice:after,.emoji-bar button:after{content:"";position:absolute;z-index:-1;top:-80%;bottom:-80%;left:-65%;width:34%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);transform:skewX(-18deg);opacity:0;pointer-events:none}
+.primary-btn:hover:after,.secondary-btn:hover:after,.control-btn:hover:after,.icon-btn:hover:after,.background-choice:hover:after,.emoji-bar button:hover:after{animation:novaSweep .75s ease-out}
+.primary-btn:active,.secondary-btn:active,.control-btn:active,.icon-btn:active,.background-choice:active,.emoji-bar button:active{transform:scale(.965)}
+.control-btn.active{animation:novaBorderBreathe 3.5s ease-in-out infinite}
+.control-btn.danger:hover{filter:brightness(1.14)}
+.video-tile{transition:transform .35s cubic-bezier(.2,.8,.2,1),border-color .35s,box-shadow .35s;animation:tileEnter .55s ease both,novaVideoGlow 7s 1s ease-in-out infinite}
+.video-tile:hover{z-index:2;transform:translateY(-3px) scale(1.008);border-color:#8ca6d4}
+.video-tile video{transition:filter .35s,transform .6s cubic-bezier(.2,.8,.2,1)}
+.video-tile:hover video{filter:brightness(1.035)}
+.video-name{transition:transform .3s,background .3s}
+.video-tile:hover .video-name{transform:translateY(-2px)}
+.tile-expand{transition:transform .25s,opacity .25s,filter .25s}
+.tile-expand:hover{transform:scale(1.1) rotate(4deg);filter:brightness(1.2)}
+.participant-chip{animation:novaChipIn .35s cubic-bezier(.2,.8,.2,1) both;transition:transform .2s,border-color .2s,filter .2s}
+.participant-chip:hover{transform:translateY(-2px);filter:brightness(1.12)}
+.chat-panel{transition:border-color .3s,box-shadow .3s}
+.chat-panel:focus-within{border-color:#657b9d;box-shadow:0 18px 48px rgba(0,0,0,.32)}
+.chat-item{animation:novaMessageIn .28s cubic-bezier(.2,.8,.2,1) both;transform-origin:bottom}
+.chat-form button{transition:transform .2s,filter .2s}
+.chat-form button:hover{transform:translateY(-2px) scale(1.04);filter:brightness(1.13)}
+.chat-form button:active{transform:scale(.94)}
+.background-choice{transition:transform .25s,border-color .25s,box-shadow .25s,filter .25s}
+.background-choice:hover{transform:translateY(-3px);filter:brightness(1.08)}
+.background-choice.selected{animation:novaPulse 2.8s ease-in-out infinite}
+.toast.show{animation:novaRiseIn .3s cubic-bezier(.16,1,.3,1) both}
+.boot-symbol{animation:bootPulse 1.2s infinite alternate,novaBootOrbit 18s linear infinite}
+.boot-screen:after{content:"";position:absolute;left:0;right:0;top:0;height:22%;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(255,255,255,.055),transparent);animation:novaScan 2.6s ease-in-out infinite}
+.meeting-head,.participant-bar,.video-area,.chat-panel{animation:novaRiseIn .65s cubic-bezier(.16,1,.3,1) both}
+.participant-bar{animation-delay:.06s}
+.video-area{animation-delay:.12s}
+.chat-panel{animation-delay:.18s}
+.video-tile.has-screen .camera-feed,.self-tile.sharing-screen .self-screen-preview{transition:width .3s ease,border-radius .3s,transform .3s;animation:novaRiseIn .35s ease both}
+.video-tile.has-screen .camera-feed:hover,.self-tile.sharing-screen .self-screen-preview:hover{transform:scale(1.045);border-radius:13px}
+@media(hover:none){.entry-card:hover,.video-tile:hover,.participant-chip:hover,.background-choice:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){
+ .entry-card,.hero,.eyebrow,.hero h1,.lead,.identity-card,.meeting-head,.participant-bar,.video-area,.chat-panel,.video-tile,.chat-item,.participant-chip,.toast.show,.video-tile.has-screen .camera-feed,.self-tile.sharing-screen .self-screen-preview{animation:none!important}
+ .entry-card:hover,.video-tile:hover,.participant-chip:hover,.background-choice:hover{transform:none!important}
+}
