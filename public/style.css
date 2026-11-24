@@ -560,3 +560,80 @@ footer{color:#8c9bb1;border-top-color:#27354a}
 .password-toggle:hover{background:#223553;color:#fff}
 @media(max-width:780px){.topbar{gap:12px}.main-nav{order:3;width:100%;justify-content:center;margin:4px 0 0}.account-actions{margin-left:auto}}
 @media(max-width:420px){.main-nav-btn{flex:1;padding:9px 8px}.community-page{margin-top:30px}}
+
+
+/* NOVALINK VISUAL REFINEMENT — home, community chat and boot only */
+.hero{
+  position:relative;isolation:isolate;max-width:1080px;margin-top:clamp(42px,7vh,76px);
+  padding:clamp(8px,2vw,22px) 0 34px;
+}
+.hero:before{
+  content:"";position:absolute;z-index:-1;pointer-events:none;left:50%;top:3%;
+  width:min(900px,110vw);height:520px;transform:translateX(-50%);
+  background:radial-gradient(ellipse at 50% 18%,rgba(52,91,184,.18),transparent 58%),
+    radial-gradient(ellipse at 78% 52%,rgba(112,66,190,.10),transparent 44%);
+  filter:blur(18px);
+}
+.hero .eyebrow{display:inline-flex;align-items:center;gap:10px;padding:8px 14px;border:1px solid rgba(111,145,216,.18);border-radius:999px;background:rgba(13,23,41,.58);box-shadow:0 8px 30px #0003;letter-spacing:3px}
+.hero .eyebrow>span{width:6px;height:6px;border-radius:50%;background:#83dfff;box-shadow:0 0 12px #83dfff}
+.hero h1{margin-top:30px;font-size:clamp(50px,8vw,96px);line-height:1.2;letter-spacing:-.055em;text-shadow:0 12px 70px rgba(63,104,214,.2)}
+.hero .lead{max-width:560px;margin:0 auto;color:#a1aec5;font-size:clamp(12px,1.5vw,15px);line-height:1.9}
+.identity-card{position:relative;max-width:390px;margin:34px auto 25px;padding:17px 21px 14px;border-radius:16px;border-color:rgba(128,157,218,.24);background:linear-gradient(145deg,rgba(20,31,53,.86),rgba(8,15,28,.92));box-shadow:0 18px 55px #0005,inset 0 1px #ffffff0d}
+.entry-grid{width:min(900px,100%);gap:20px}
+.entry-card{min-height:330px;padding:clamp(24px,3vw,34px);border-radius:23px;border-color:rgba(121,151,211,.22);background:linear-gradient(145deg,rgba(20,31,52,.97),rgba(8,14,26,.98));box-shadow:0 28px 90px rgba(0,0,0,.46),inset 0 1px 0 #ffffff10}
+.entry-card:before{background:radial-gradient(circle at 88% 5%,color-mix(in srgb,var(--accent) 18%,transparent),transparent 38%),linear-gradient(145deg,rgba(112,145,225,.08),transparent 58%)}
+.entry-icon{width:48px;height:48px;border-radius:15px;border:1px solid color-mix(in srgb,var(--accent) 36%,transparent);background:color-mix(in srgb,var(--accent) 12%,#101a2d);box-shadow:0 0 28px color-mix(in srgb,var(--accent) 13%,transparent)}
+.entry-card h2{font-size:25px;letter-spacing:-.7px}
+.entry-card p,.entry-card li{color:#9eacc3;line-height:1.85}
+.entry-card input{border-radius:10px;background:rgba(4,10,20,.52);border:1px solid rgba(113,139,185,.24);padding:12px 13px}
+.entry-card .primary-btn,.entry-card .secondary-btn{min-height:48px;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.22)}
+.home-note{margin-top:27px;color:#8292ad;letter-spacing:.06em}
+.feature-row{width:min(610px,100%);margin:35px auto 0;padding:17px 12px;border-top:1px solid rgba(112,143,204,.14);border-bottom:1px solid rgba(112,143,204,.14);background:linear-gradient(90deg,transparent,rgba(19,30,51,.35),transparent)}
+.feature-row b{color:#9fbaff}
+.community-page{max-width:1040px;margin:clamp(34px,6vh,66px) auto 80px}
+.community-page .lobby-panel{width:100%;min-height:580px;padding:clamp(18px,3vw,30px);border-radius:24px;border:1px solid rgba(119,151,218,.25);background:linear-gradient(145deg,rgba(17,28,49,.97),rgba(7,13,25,.98));box-shadow:0 30px 100px #0007,inset 0 1px 0 #ffffff0d;position:relative;overflow:hidden}
+.community-page .lobby-panel:before{content:"";position:absolute;pointer-events:none;inset:0 0 auto;height:180px;background:radial-gradient(ellipse at 12% 0%,rgba(72,129,220,.17),transparent 65%),radial-gradient(ellipse at 90% 0%,rgba(136,85,212,.12),transparent 55%)}
+.lobby-head{position:relative;align-items:center;padding:5px 2px 22px;border-bottom:1px solid rgba(112,143,204,.16)}
+.lobby-head h2{font-size:clamp(23px,3vw,30px);letter-spacing:-.7px}
+.lobby-head p{font-size:12px;color:#9baac2}
+.lobby-notify-btn{border-radius:999px;padding:11px 16px;border-color:rgba(122,153,214,.34);background:rgba(18,31,53,.82);font-size:11px;backdrop-filter:blur(12px)}
+.lobby-messages{height:390px;margin-top:18px;padding:20px;border-radius:17px;border-color:rgba(112,143,204,.18);background:radial-gradient(ellipse at 50% 0%,rgba(38,58,99,.16),transparent 55%),rgba(3,8,17,.72);gap:13px}
+.lobby-message{display:grid;grid-template-columns:34px minmax(0,1fr);column-gap:11px;row-gap:2px;max-width:min(82%,620px);padding:12px 15px;border-radius:5px 16px 16px 16px;border:1px solid rgba(111,145,210,.19);background:linear-gradient(135deg,rgba(24,39,65,.96),rgba(13,23,41,.96));box-shadow:0 9px 25px #0003;animation:chatMaterialize .32s cubic-bezier(.16,1,.3,1) both}
+.lobby-message-avatar{grid-row:1 / span 2;display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,#284d86,#493b79);border:1px solid rgba(157,181,255,.28);color:#e6efff;font-size:12px;font-weight:900;box-shadow:0 0 18px rgba(80,113,205,.16)}
+.lobby-message-meta{align-self:center;gap:10px;margin:0 0 3px}
+.lobby-message-meta strong{font-size:11px;color:#b8d7ff}
+.lobby-message-meta time{font-size:9px}
+.lobby-message p{font-size:13px;line-height:1.75;color:#edf3ff}
+.lobby-form{margin-top:15px;gap:10px}
+.lobby-form input{min-height:50px;padding:14px 17px;border-radius:13px;border-color:rgba(116,147,207,.25);background:rgba(4,10,20,.82);font-size:13px}
+.lobby-form button{min-width:94px;border-radius:13px;background:linear-gradient(115deg,#285f94,#5149a1);border-color:rgba(137,160,240,.4);box-shadow:0 8px 25px rgba(48,83,160,.22);font-size:12px}
+.lobby-footnote{font-size:10px;color:#7e8eaa}
+@keyframes chatMaterialize{from{opacity:0;transform:translateY(9px) scale(.985);filter:blur(3px)}to{opacity:1;transform:none;filter:blur(0)}}
+.boot-screen{background:radial-gradient(ellipse at 50% 42%,#18284a 0%,#0b1223 36%,#050812 76%);overflow:hidden}
+.boot-screen:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 20%,rgba(104,139,228,.045) 50%,transparent 78%),radial-gradient(ellipse at 50% 100%,rgba(47,84,165,.16),transparent 52%)}
+.boot-core-wrap{width:142px;height:142px}
+.boot-core-glow{inset:-24px;background:radial-gradient(circle,rgba(81,111,231,.35),rgba(111,74,191,.12) 42%,transparent 72%);filter:blur(22px)}
+.boot-core .boot-logo-image{border-radius:31px;filter:drop-shadow(0 15px 38px rgba(75,105,220,.42))}
+.boot-word{font-size:25px;letter-spacing:9px;margin-top:31px;text-shadow:0 0 35px rgba(104,137,222,.16)}
+.boot-line{width:min(230px,58vw);height:3px;border-radius:99px;background:rgba(117,145,205,.16);box-shadow:0 0 25px rgba(79,112,202,.12)}
+.boot-line i{border-radius:99px}
+.boot-status{padding:8px 12px;border:1px solid rgba(116,145,210,.16);border-radius:999px;background:rgba(8,15,29,.52);backdrop-filter:blur(12px)}
+.boot-bottom{letter-spacing:4px;color:#8295bd}
+@media(max-width:620px){
+ .hero{margin-top:30px;padding-bottom:18px}
+ .hero h1{font-size:clamp(45px,12vw,66px);letter-spacing:-.06em;margin-top:23px}
+ .entry-grid{gap:13px}
+ .entry-card{min-height:0;padding:23px 20px;border-radius:19px}
+ .community-page{margin-top:24px}
+ .community-page .lobby-panel{min-height:0;padding:17px;border-radius:19px}
+ .lobby-head{align-items:flex-start}
+ .lobby-messages{height:56vh;min-height:280px;max-height:480px;padding:13px}
+ .lobby-message{max-width:96%;padding:10px 11px}
+ .lobby-form button{min-width:76px}
+ .boot-core-wrap{width:126px;height:126px}
+ .boot-word{font-size:21px;letter-spacing:7px}
+}
+@media(prefers-reduced-motion:reduce){
+ .hero,.entry-card,.lobby-message{animation:none!important}
+ .entry-card,.entry-card:hover{transition:none;transform:none}
+}
