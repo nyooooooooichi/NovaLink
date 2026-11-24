@@ -802,3 +802,57 @@ footer{color:#8c9bb1;border-top-color:#27354a}
 }
 .boot-start-label{margin-top:3px;text-shadow:0 2px 18px rgba(146,177,255,.45)}
 .boot-start-sub{color:rgba(190,207,245,.78)}
+
+
+/* J.A.R.V.I.S. INSPIRED / NOVALINK COMMAND INTERFACE */
+.boot-screen{background:#030711;isolation:isolate;overflow:hidden}
+.boot-screen:before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 50% 47%,rgba(24,57,111,.22),transparent 42%),linear-gradient(90deg,rgba(2,8,19,.72),transparent 24%,transparent 76%,rgba(2,8,19,.72))}
+.boot-universe{position:absolute;inset:0;overflow:hidden}
+.boot-scanlines{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;background:repeating-linear-gradient(180deg,transparent 0 3px,rgba(117,177,255,.035) 4px,transparent 5px);mix-blend-mode:screen}
+.boot-screen.sequence-start .boot-scanlines{animation:bootScanlineReveal .8s ease forwards,bootScanlineDrift 8s .8s linear infinite}
+.boot-hud{position:absolute;z-index:6;color:rgba(154,190,245,.68);font:600 8px "DM Sans",sans-serif;letter-spacing:2px;opacity:0;pointer-events:none;text-shadow:0 0 14px rgba(92,151,255,.45)}
+.boot-hud span,.boot-hud b,.boot-hud small{display:block;font-weight:600}
+.boot-hud b{color:rgba(135,220,255,.92);margin-top:7px}
+.boot-hud i{display:block;height:1px;background:linear-gradient(90deg,rgba(104,174,255,.7),transparent);margin:10px 0}
+.boot-hud em{font-style:normal;color:#d6e9ff}
+.boot-hud-top{top:clamp(22px,4vh,42px);left:clamp(24px,5vw,72px);right:clamp(24px,5vw,72px);display:grid;grid-template-columns:1fr 1fr auto;align-items:center;gap:18px}
+.boot-hud-top b{margin:0;text-align:center}.boot-hud-top i{width:100%;max-width:170px;justify-self:end}
+.boot-hud-top strong{font-size:9px;color:#d4e6ff;letter-spacing:2px}
+.boot-hud-left,.boot-hud-right{top:50%;width:155px;transform:translateY(-50%);padding:15px 13px;border:1px solid rgba(104,154,226,.16);background:linear-gradient(135deg,rgba(12,31,59,.32),rgba(4,11,25,.08));backdrop-filter:blur(6px)}
+.boot-hud-left{left:clamp(22px,4vw,58px);border-left:2px solid rgba(97,194,255,.5)}
+.boot-hud-right{right:clamp(22px,4vw,58px);border-right:2px solid rgba(97,194,255,.5);text-align:right}
+.boot-hud-meter{height:3px;background:rgba(96,139,197,.18);margin:12px 0 9px;overflow:hidden}
+.boot-hud-meter i{display:block;width:0;height:100%;background:#7ce5ff;box-shadow:0 0 12px #60caff}
+.boot-hud-wave{height:26px;display:flex;align-items:center;justify-content:flex-end;gap:3px;margin:10px 0}
+.boot-hud-wave i{width:3px;height:5px;background:#70dfff;box-shadow:0 0 8px #5bcaff;animation:bootWave .75s ease-in-out infinite alternate}
+.boot-hud-wave i:nth-child(2n){animation-delay:-.3s}.boot-hud-wave i:nth-child(3n){animation-delay:-.55s}.boot-hud-wave i:nth-child(4n){animation-delay:-.15s}
+.boot-hud-bottom{left:clamp(24px,5vw,72px);right:clamp(24px,5vw,72px);bottom:clamp(22px,4vh,42px);display:flex;align-items:center;gap:18px}
+.boot-hud-bottom i{height:1px;flex:1;background:linear-gradient(90deg,rgba(100,169,255,.55),rgba(100,169,255,.04))}
+.boot-hud-bottom b{color:rgba(205,226,255,.8)}
+.boot-screen.sequence-start .boot-hud{animation:bootHudIn .9s .55s cubic-bezier(.16,1,.3,1) forwards}
+.boot-screen.sequence-start .boot-hud-meter i{animation:bootMeterFill 2.4s 1s ease forwards}
+.boot-screen.sequence-start .boot-hud-wave i{animation-duration:.48s}
+.boot-screen.sequence-launch .boot-hud{animation:bootHudOut .4s ease forwards}
+.boot-screen.sequence-start .boot-pretitle{letter-spacing:4px}
+.boot-screen.sequence-start .boot-core-wrap{filter:drop-shadow(0 0 35px rgba(83,162,255,.28))}
+.boot-screen.sequence-start .boot-core{border-radius:28%;box-shadow:0 0 0 8px rgba(100,163,255,.035),0 28px 90px rgba(0,0,0,.55),0 0 80px rgba(61,145,255,.32),inset 0 1px rgba(255,255,255,.2)}
+.boot-screen.sequence-start .boot-core-aura{border-color:rgba(103,187,255,.35);box-shadow:0 0 100px rgba(60,145,255,.18),inset 0 0 70px rgba(89,160,255,.12)}
+.boot-screen.sequence-start .boot-ring-a{border-top-color:rgba(102,211,255,.75);border-bottom-color:rgba(122,143,255,.42)}
+.boot-screen.sequence-start .boot-ring-b{border-left-color:rgba(121,213,255,.72);border-right-color:rgba(111,144,255,.42)}
+.boot-screen.sequence-start .boot-energy{height:2px}
+.boot-screen.sequence-launch .boot-launch-flash{background:radial-gradient(circle at 50% 46%,rgba(220,245,255,.95),rgba(83,174,255,.34) 12%,rgba(71,99,220,.08) 34%,transparent 58%)}
+@keyframes bootHudIn{from{opacity:0;filter:blur(5px)}to{opacity:.92;filter:blur(0)}}
+@keyframes bootHudOut{to{opacity:0;filter:blur(4px);transform:translateY(-8px)}}
+@keyframes bootMeterFill{to{width:100%}}
+@keyframes bootWave{from{height:4px;opacity:.45}to{height:24px;opacity:1}}
+@keyframes bootScanlineReveal{to{opacity:.7}}@keyframes bootScanlineDrift{to{background-position:0 18px}}
+@media(max-width:760px){
+ .boot-hud-left,.boot-hud-right{top:auto;bottom:90px;width:125px;padding:10px 9px;transform:none;font-size:6px;letter-spacing:1.2px}
+ .boot-hud-left{left:14px}.boot-hud-right{right:14px}
+ .boot-hud-top{top:18px;left:18px;right:18px;grid-template-columns:1fr auto;gap:8px;font-size:6px;letter-spacing:1px}
+ .boot-hud-top b,.boot-hud-top i{display:none}
+ .boot-hud-bottom{bottom:17px;left:18px;right:18px;font-size:6px;letter-spacing:1px}
+ .boot-hud-wave{height:17px}.boot-hud-wave i{width:2px}
+}
+@media(max-height:620px) and (min-width:761px){.boot-hud-left,.boot-hud-right{display:none}.boot-hud-top{top:12px}.boot-hud-bottom{bottom:12px}}
+@media(prefers-reduced-motion:reduce){.boot-hud-wave i{animation:none!important}.boot-screen.sequence-start .boot-hud{opacity:.9}}
