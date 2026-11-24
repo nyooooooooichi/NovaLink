@@ -1180,7 +1180,7 @@ footer{color:#8c9bb1;border-top-color:#27354a}
 /* NOVALINK SETTINGS CONTROL CENTER */
 :root{--nova-accent:#83b5ff;--nova-brightness:1}
 .topbar,.topbar~main,.topbar~footer{filter:brightness(var(--nova-brightness))}
-.settings-open-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid #425a7c;background:linear-gradient(145deg,#172943,#101a2b);color:#d9e8ff;border-radius:10px;padding:9px 13px;font:600 12px inherit;cursor:pointer;box-shadow:inset 0 1px #ffffff12,0 5px 16px #0003;white-space:nowrap}
+.settings-open-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid #425a7c;background:linear-gradient(145deg,#172943,#101a2b);color:#d9e8ff;border-radius:10px;padding:9px 13px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;box-shadow:inset 0 1px #ffffff12,0 5px 16px #0003;white-space:nowrap}
 .settings-open-btn:hover{border-color:var(--nova-accent);color:#fff;box-shadow:0 0 18px color-mix(in srgb,var(--nova-accent) 22%,transparent)}
 .settings-modal{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:18px}
 .settings-modal.hidden{display:none!important}
