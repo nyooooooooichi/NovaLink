@@ -1062,12 +1062,11 @@ socket.on("room:closed", ({ message } = {}) => {
 });
 
 
-// Cinematic NovaLink boot with user-initiated spatial audio.
+// Automatic cinematic NovaLink boot with browser-safe audio fallback.
 window.addEventListener("DOMContentLoaded", () => {
   initAuth();
   const boot = $("bootScreen");
   if (boot) {
-    const startButton = $("bootStartButton");
     const audioToggle = $("bootAudioToggle");
     const audioLabel = $("bootAudioLabel");
     let soundEnabled = true;
@@ -1075,6 +1074,7 @@ window.addEventListener("DOMContentLoaded", () => {
     let masterGain = null;
     let reverb = null;
     let audioStarted = false;
+    let bootFinished = false;
 
     try {
       soundEnabled = localStorage.getItem("novalinkBootSound") !== "off";
@@ -1107,8 +1107,7 @@ window.addEventListener("DOMContentLoaded", () => {
         for (let channel = 0; channel < 2; channel++) {
           const data = impulse.getChannelData(channel);
           for (let i = 0; i < impulseLength; i++) {
-            const decay = Math.pow(1 - i / impulseLength, 2.8);
-            data[i] = (Math.random() * 2 - 1) * decay * 0.32;
+            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / impulseLength, 2.8) * 0.32;
           }
         }
         reverb.buffer = impulse;
@@ -1120,7 +1119,7 @@ window.addEventListener("DOMContentLoaded", () => {
         compressor.connect(audioContext.destination);
       }
       if (audioContext.state === "suspended") await audioContext.resume();
-      return true;
+      return audioContext.state === "running";
     };
     const tone = (frequency, at, duration, volume, type = "sine", endFrequency = null, wet = true) => {
       if (!audioContext || !masterGain || !soundEnabled) return;
@@ -1143,8 +1142,8 @@ window.addEventListener("DOMContentLoaded", () => {
       if (!audioContext || !masterGain || !soundEnabled) return;
       const length = Math.max(1, Math.floor(audioContext.sampleRate * duration));
       const buffer = audioContext.createBuffer(1, length, audioContext.sampleRate);
-      const channel = buffer.getChannelData(0);
-      for (let i = 0; i < length; i++) channel[i] = (Math.random() * 2 - 1) * (1 - i / length);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / length);
       const source = audioContext.createBufferSource();
       const filter = audioContext.createBiquadFilter();
       const gain = audioContext.createGain();
@@ -1164,36 +1163,32 @@ window.addEventListener("DOMContentLoaded", () => {
       source.start(now + at);
     };
     const playBootSound = () => {
-      if (!soundEnabled || !audioContext) return;
-      // 00: Reactor ignition — deep cinematic power-on.
+      if (!soundEnabled || !audioContext || audioStarted) return;
+      audioStarted = true;
       tone(42, 0, 1.45, 0.34, "sine", 31, false);
       tone(86, 0.03, 1.1, 0.13, "triangle", 54);
       noiseSweep(0.02, 1.25, 0.11, 180, 1250);
-      tone(164.81, 0.48, 1.15, 0.055, "sine");
-      tone(246.94, 0.68, 1.25, 0.045, "sine");
-      // 01: Core lights up — glassy ascending harmonic notes.
+      tone(164.81, 0.48, 1.15, 0.055);
+      tone(246.94, 0.68, 1.25, 0.045);
       [261.63, 329.63, 392, 523.25, 659.25].forEach((f, i) => {
-        tone(f, 0.76 + i * 0.105, 0.9, 0.075 - i * 0.006, "sine");
-        tone(f * 2, 0.79 + i * 0.105, 0.58, 0.018, "sine");
+        tone(f, 0.76 + i * 0.105, 0.9, 0.075 - i * 0.006);
+        tone(f * 2, 0.79 + i * 0.105, 0.58, 0.018);
       });
-      // 02: Network synchronization — precise digital pulses and a rising sweep.
       [0, 0.19, 0.38, 0.57].forEach((t, i) => {
         tone(880 + i * 180, 1.18 + t, 0.16, 0.045, "sine", 660 + i * 150, false);
         tone(110 + i * 18, 1.2 + t, 0.2, 0.035, "triangle", null, false);
       });
       noiseSweep(1.22, 0.9, 0.055, 500, 5200);
-      // 03: Secure lock — resonant three-note confirmation.
-      tone(523.25, 1.94, 1.25, 0.11, "sine");
-      tone(659.25, 2.02, 1.35, 0.095, "sine");
-      tone(783.99, 2.1, 1.5, 0.085, "sine");
-      tone(1046.5, 2.18, 1.1, 0.035, "sine");
+      tone(523.25, 1.94, 1.25, 0.11);
+      tone(659.25, 2.02, 1.35, 0.095);
+      tone(783.99, 2.1, 1.5, 0.085);
+      tone(1046.5, 2.18, 1.1, 0.035);
       tone(55, 1.9, 1.25, 0.18, "sine", 38, false);
-      // 04: Launch — wide rushing air, sub impact and bright release.
       noiseSweep(2.78, 1.05, 0.19, 240, 9000);
       tone(73.42, 2.83, 0.95, 0.3, "sine", 29, false);
       tone(146.83, 2.86, 0.8, 0.12, "triangle", 58);
-      tone(987.77, 3.0, 0.95, 0.055, "sine");
-      tone(1318.51, 3.08, 1.05, 0.035, "sine");
+      tone(987.77, 3.0, 0.95, 0.055);
+      tone(1318.51, 3.08, 1.05, 0.035);
     };
     const updateBoot = (message, value, activeStep) => {
       const status = $("bootStatus");
@@ -1210,32 +1205,41 @@ window.addEventListener("DOMContentLoaded", () => {
       try { localStorage.setItem("novalinkBootSound", soundEnabled ? "on" : "off"); } catch (_) {}
       refreshAudioToggle();
     });
-    startButton?.addEventListener("click", async () => {
-      if (audioStarted) return;
-      audioStarted = true;
-      startButton.disabled = true;
-      startButton.classList.add("is-starting");
-      if (soundEnabled) {
-        try {
-          const ready = await makeAudio();
-          if (ready) playBootSound();
-        } catch (error) {
-          console.warn("NovaLink startup audio unavailable:", error);
-        }
+
+    // Attempt immediate playback. If the browser blocks autoplay, retry on the
+    // first real user gesture while the intro is still visible.
+    const startAudio = async () => {
+      if (!soundEnabled || audioStarted || bootFinished) return;
+      try {
+        if (await makeAudio()) playBootSound();
+      } catch (error) {
+        console.info("NovaLink audio is waiting for a user gesture.", error);
       }
-      boot.classList.add("sequence-start");
-      updateBoot("POWERING NOVA CORE", 12, 0);
-      window.setTimeout(() => updateBoot("SYNCHRONIZING NETWORK", 38, 1), 900);
-      window.setTimeout(() => {
-        boot.classList.add("sequence-lock");
-        updateBoot("SECURE CHANNEL ESTABLISHED", 72, 2);
-      }, 1850);
-      window.setTimeout(() => {
-        boot.classList.add("sequence-launch");
-        updateBoot("WELCOME TO NOVALINK", 100, 2);
-      }, 2850);
-      window.setTimeout(() => boot.classList.add("done"), 3850);
+    };
+    void startAudio();
+    const unlockAudio = () => {
+      if (!soundEnabled || audioStarted || bootFinished) return;
+      void startAudio();
+    };
+    ["pointerdown", "touchstart", "keydown"].forEach(eventName => {
+      window.addEventListener(eventName, unlockAudio, { once: true, passive: true });
     });
+
+    boot.classList.add("sequence-start");
+    updateBoot("POWERING NOVA CORE", 12, 0);
+    window.setTimeout(() => updateBoot("SYNCHRONIZING NETWORK", 38, 1), 900);
+    window.setTimeout(() => {
+      boot.classList.add("sequence-lock");
+      updateBoot("SECURE CHANNEL ESTABLISHED", 72, 2);
+    }, 1850);
+    window.setTimeout(() => {
+      boot.classList.add("sequence-launch");
+      updateBoot("WELCOME TO NOVALINK", 100, 2);
+    }, 2850);
+    window.setTimeout(() => {
+      bootFinished = true;
+      boot.classList.add("done");
+    }, 3850);
   }
 
   const glow = $("pointerGlow");
