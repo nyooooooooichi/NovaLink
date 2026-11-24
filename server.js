@@ -38,6 +38,68 @@ function lifeSnapshot(game) {
 function broadcastLifeState(room) {
   if (room?.lifeGame) io.to(room.id).emit("life:state", lifeSnapshot(room.lifeGame));
 }
+function applyLifeChoice(game, player, choice) {
+  if (choice.investment) {
+    if (player.cash < 500000) lifeLog(game, player.name + " は資金不足で投資を見送りました。");
+    else {
+      player.cash -= 500000;
+      const success = crypto.randomInt(0, 100) < 65;
+      const change = success ? 850000 : 150000;
+      player.cash += change;
+      lifeLog(game, player.name + " の投資は" + (success ? "成功！" : "失敗……") + "（受取 " + change.toLocaleString("ja-JP") + "円）");
+    }
+  } else {
+    if (Number.isFinite(choice.cashDelta)) player.cash = Math.max(0, player.cash + choice.cashDelta);
+    if (Number.isFinite(choice.salary)) player.salary += choice.salary;
+    if (choice.career) player.career = choice.career;
+    lifeLog(game, player.name + " は「" + choice.label + "」を選択しました。");
+  }
+}
+function chooseCpuLifeOption(game, player, event) {
+  if (event.choices.some(choice => choice.investment) && player.cash >= 900000) return event.choices.find(choice => choice.investment);
+  const affordable = event.choices.filter(choice => !Number.isFinite(choice.cashDelta) || player.cash + choice.cashDelta >= 0);
+  const options = affordable.length ? affordable : event.choices;
+  return [...options].sort((a,b) => {
+    const score = choice => (choice.salary || 0) * 3 + (choice.career ? 100000 : 0) +
+      (choice.investment ? (player.cash >= 900000 ? 150000 : -100000) : 0) +
+      (Number.isFinite(choice.cashDelta) ? choice.cashDelta : 0);
+    return score(b) - score(a);
+  })[0];
+}
+function scheduleCpuLifeTurn(room, delay = 1100) {
+  if (room.lifeCpuTimer) clearTimeout(room.lifeCpuTimer);
+  room.lifeCpuTimer = null;
+  const game = room.lifeGame;
+  if (!game || game.status !== "playing") return;
+  const player = game.players[game.turnIndex];
+  if (!player?.isCpu || player.finished) return;
+  room.lifeCpuTimer = setTimeout(() => {
+    room.lifeCpuTimer = null;
+    const current = room.lifeGame;
+    if (!current || current.status !== "playing") return;
+    const cpu = current.players[current.turnIndex];
+    if (!cpu?.isCpu || cpu.id !== player.id) return;
+    if (current.currentEvent) {
+      const choice = chooseCpuLifeOption(current, cpu, current.currentEvent);
+      if (choice) {
+        applyLifeChoice(current, cpu, choice);
+        current.currentEvent = null;
+        nextLifeTurn(current);
+      }
+    } else {
+      const roll = crypto.randomInt(1, 7);
+      const from = cpu.position;
+      cpu.position = Math.min(current.board.length - 1, cpu.position + roll);
+      current.lastRoll = { playerId: cpu.id, playerName: cpu.name, value: roll, from, to: cpu.position, at: Date.now() };
+      const tile = current.board[cpu.position];
+      lifeLog(current, cpu.name + " が " + roll + " を出して「" + tile.title + "」に到着。");
+      resolveLifeTile(current, cpu, tile);
+      if (!current.currentEvent && current.status === "playing") nextLifeTurn(current);
+    }
+    broadcastLifeState(room);
+    scheduleCpuLifeTurn(room, 900);
+  }, delay);
+}
 function lifeLog(game, message) {
   game.log.unshift({ id: crypto.randomUUID(), message, at: Date.now() });
   game.log = game.log.slice(0, 40);
@@ -198,6 +260,7 @@ function enterRoom(socket, roomId, name, role, reply) {
 function closeRoom(roomId, reason = "ホストが退出したため、部屋が終了しました。") {
   const room = rooms.get(roomId);
   if (!room) return;
+  if (room.lifeCpuTimer) clearTimeout(room.lifeCpuTimer);
   for (const id of [...room.members]) {
     const member = io.sockets.sockets.get(id);
     if (!member) continue;
@@ -268,7 +331,7 @@ io.on("connection", socket => {
       const credentials = await hashPassword(password);
       rooms.set(roomId, {
         id: roomId, name: roomName, members: new Set(), createdAt: Date.now(),
-        passwordSalt: credentials.salt, passwordHash: credentials.hash, lifeGame: null
+        passwordSalt: credentials.salt, passwordHash: credentials.hash, lifeGame: null, lifeCpuTimer: null
       });
       enterRoom(socket, roomId, name, "host", reply);
     } catch (error) {
@@ -318,9 +381,32 @@ io.on("connection", socket => {
     const game = room?.lifeGame;
     if (!game || game.status !== "lobby") return reply({ ok: false, error: "参加できるゲームがありません。" });
     if (game.players.some(player => player.id === socket.id)) return reply({ ok: true });
-    if (game.players.length >= MAX_PEERS) return reply({ ok: false, error: "ゲームは最大10人です。" });
+    if (game.players.filter(player => !player.isCpu).length >= MAX_PEERS) return reply({ ok: false, error: "人間プレイヤーは最大10人です。" });
     game.players.push({ id: socket.id, name: socket.data.name || "Guest", position: 0, cash: LIFE_START_CASH, salary: 100000, career: "未就職", ready: false, finished: false });
     lifeLog(game, (socket.data.name || "Guest") + " がゲームに参加しました。");
+    broadcastLifeState(room);
+    reply({ ok: true });
+  });
+
+  socket.on("life:cpu:add", (_data, reply = () => {}) => {
+    const room = rooms.get(socket.data.roomId), game = room?.lifeGame;
+    if (!game || socket.data.role !== "host" || game.hostId !== socket.id || game.status !== "lobby") return reply({ ok: false, error: "CPUを追加できるのは待機中のホストだけです。" });
+    const count = game.players.filter(player => player.isCpu).length;
+    if (count >= 4) return reply({ ok: false, error: "CPUは最大4人までです。" });
+    const cpuNumber = count + 1;
+    game.players.push({ id: "cpu-" + crypto.randomUUID(), name: "CPU " + String(cpuNumber).padStart(2,"0"), isCpu: true, position: 0, cash: LIFE_START_CASH, salary: 100000, career: "未就職", ready: true, finished: false });
+    lifeLog(game, "CPU " + String(cpuNumber).padStart(2,"0") + " が参加しました。");
+    broadcastLifeState(room);
+    reply({ ok: true });
+  });
+
+  socket.on("life:cpu:remove", (_data, reply = () => {}) => {
+    const room = rooms.get(socket.data.roomId), game = room?.lifeGame;
+    if (!game || socket.data.role !== "host" || game.hostId !== socket.id || game.status !== "lobby") return reply({ ok: false, error: "CPUを削除できるのは待機中のホストだけです。" });
+    const index = game.players.map((player, i) => player.isCpu ? i : -1).filter(i => i >= 0).pop();
+    if (index === undefined) return reply({ ok: false, error: "削除できるCPUがいません。" });
+    const [removed] = game.players.splice(index, 1);
+    lifeLog(game, removed.name + " が退出しました。");
     broadcastLifeState(room);
     reply({ ok: true });
   });
@@ -338,13 +424,14 @@ io.on("connection", socket => {
     const room = rooms.get(socket.data.roomId), game = room?.lifeGame;
     if (!game || socket.data.role !== "host" || game.hostId !== socket.id) return reply({ ok: false, error: "開始できるのはホストだけです。" });
     if (game.status !== "lobby") return reply({ ok: false, error: "ゲームは既に開始されています。" });
-    if (game.players.length < 2) return reply({ ok: false, error: "開始には2人以上の参加が必要です。" });
-    if (!game.players.every(player => player.ready)) return reply({ ok: false, error: "全員の準備が完了していません。" });
+    if (game.players.length < 2) return reply({ ok: false, error: "人間またはCPUを合わせて2人以上必要です。" });
+    if (!game.players.every(player => player.isCpu || player.ready)) return reply({ ok: false, error: "人間プレイヤー全員の準備が完了していません。" });
     game.status = "playing";
     game.turnIndex = 0;
     game.turnNumber = 1;
     lifeLog(game, "人生ゲーム開始！ " + game.players[0].name + " の番です。");
     broadcastLifeState(room);
+    scheduleCpuLifeTurn(room);
     reply({ ok: true });
   });
 
@@ -362,6 +449,7 @@ io.on("connection", socket => {
     resolveLifeTile(game, player, tile);
     if (!game.currentEvent && game.status === "playing") nextLifeTurn(game);
     broadcastLifeState(room);
+    scheduleCpuLifeTurn(room);
     reply({ ok: true });
   });
 
@@ -372,25 +460,11 @@ io.on("connection", socket => {
     if (!event || !player || player.id !== socket.id || event.playerId !== socket.id) return reply({ ok: false, error: "選択できるイベントがありません。" });
     const choice = event.choices.find(item => item.id === String(choiceId || ""));
     if (!choice) return reply({ ok: false, error: "無効な選択です。" });
-    if (choice.investment) {
-      if (player.cash < 500000) {
-        lifeLog(game, player.name + " は資金不足で投資を見送りました。");
-      } else {
-        player.cash -= 500000;
-        const success = crypto.randomInt(0, 100) < 65;
-        const change = success ? 850000 : 150000;
-        player.cash += change;
-        lifeLog(game, player.name + " の投資は" + (success ? "成功！" : "失敗……") + "（受取 " + change.toLocaleString("ja-JP") + "円）");
-      }
-    } else {
-      if (Number.isFinite(choice.cashDelta)) player.cash = Math.max(0, player.cash + choice.cashDelta);
-      if (Number.isFinite(choice.salary)) player.salary += choice.salary;
-      if (choice.career) player.career = choice.career;
-      lifeLog(game, player.name + " は「" + choice.label + "」を選択しました。");
-    }
+    applyLifeChoice(game, player, choice);
     game.currentEvent = null;
     nextLifeTurn(game);
     broadcastLifeState(room);
+    scheduleCpuLifeTurn(room);
     reply({ ok: true });
   });
 
