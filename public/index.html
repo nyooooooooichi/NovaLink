@@ -17,12 +17,26 @@
       <div class="eyebrow"><span></span> CONNECTION, REIMAGINED</div>
       <h1>距離を超えて、<br><span>つながろう。</span></h1>
       <p class="lead">会話も、表情も、画面も。必要なものをひとつの場所に。</p>
-      <div class="launch-card">
-        <label for="displayName">YOUR NAME</label><input id="displayName" maxlength="24" placeholder="名前を入力" autocomplete="nickname">
-        <label for="roomId">ROOM ID</label><div class="room-input"><input id="roomId" maxlength="64" placeholder="ルームIDを入力"><button class="icon-btn" id="randomRoom" title="ランダムIDを作成">↗</button></div>
-        <button class="primary-btn" id="joinBtn">ミーティングに参加 <span>→</span></button>
-        <p class="fine-print">最大10人 · 招待リンクで誰でも参加可能</p>
+      <div class="identity-card">
+        <label for="displayName">DISPLAY NAME</label>
+        <input id="displayName" maxlength="24" placeholder="あなたの名前" autocomplete="nickname">
       </div>
+      <div class="entry-grid">
+        <article class="entry-card host-card">
+          <div class="entry-icon">✦</div><div class="entry-kicker">FOR HOST</div>
+          <h2>ルームを作成</h2><p>あなたがホストになって、ミーティングを始めます。</p>
+          <ul><li>ルームIDを自動発行</li><li>招待リンクを共有</li><li>最大10人で通話</li></ul>
+          <button class="primary-btn" id="hostBtn">ホストとして開始 <span>→</span></button>
+        </article>
+        <article class="entry-card guest-card">
+          <div class="entry-icon">↗</div><div class="entry-kicker">FOR GUEST</div>
+          <h2>ルームに参加</h2><p>招待されたルームIDを入力して参加します。</p>
+          <label for="roomId">ROOM ID / 招待コード</label>
+          <div class="room-input"><input id="roomId" maxlength="64" placeholder="例：A8K2QZ"><button class="icon-btn" id="randomRoom" title="ランダムIDを入力">↗</button></div>
+          <button class="secondary-btn" id="joinBtn">ゲストとして参加 <span>→</span></button>
+        </article>
+      </div>
+      <p class="home-note"><span class="live-dot"></span> 最大10人 · ブラウザだけでつながるオンラインミーティング</p>
       <div class="feature-row"><div><b>01</b><span>VIDEO CALL</span></div><div><b>02</b><span>SCREEN SHARE</span></div><div><b>03</b><span>LIVE CHAT</span></div></div>
     </section>
 
