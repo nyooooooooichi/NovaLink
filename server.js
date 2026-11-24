@@ -297,6 +297,8 @@ function closeRoom(roomId, reason = "ホストが退出したため、部屋が�
     member.leave(roomId);
     member.data.roomId = null;
     member.data.role = null;
+    const pushRecord = member.data.pushEndpoint ? pushSubscriptions.get(member.data.pushEndpoint) : null;
+    if (pushRecord) pushRecord.roomId = null;
   }
   rooms.delete(roomId);
   broadcastRoomList();
@@ -315,6 +317,8 @@ function leaveRoom(socket) {
   socket.leave(roomId);
   socket.data.roomId = null;
   socket.data.role = null;
+  const pushRecord = socket.data.pushEndpoint ? pushSubscriptions.get(socket.data.pushEndpoint) : null;
+  if (pushRecord) pushRecord.roomId = null;
   if (room.members.size === 0) rooms.delete(roomId);
   else {
     socket.to(roomId).emit("peer:left", { id: socket.id });
