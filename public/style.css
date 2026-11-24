@@ -1249,3 +1249,9 @@ body.nova-performance-mode .entry-card,body.nova-performance-mode .settings-dial
 .screen-quality-metrics strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-variant-numeric:tabular-nums;color:#e6f2ff}
 @keyframes screenQualityPulse{50%{opacity:.4;box-shadow:0 0 3px #63e6ad}}
 @media(max-width:620px){.screen-quality-panel{margin:8px 0 0;padding:10px}.screen-quality-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.screen-quality-metrics>div{padding:7px 8px}.screen-quality-metrics strong{font-size:12px}.screen-quality-heading{font-size:8px}}
+
+
+/* SCREEN SHARE 3.1 — Chrome floating meeting control */
+.meeting-pip-btn{border-color:rgba(104,190,255,.48);background:linear-gradient(135deg,#18395a,#12243c);color:#cce8ff}
+.meeting-pip-btn.active{border-color:#78caff;background:linear-gradient(135deg,#245b83,#1c3e61);box-shadow:0 0 18px rgba(89,180,255,.24);color:#fff}
+@media(max-width:780px){.meeting-pip-btn{display:none}}
