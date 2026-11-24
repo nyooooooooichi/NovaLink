@@ -198,6 +198,7 @@ function removeLifePlayer(room, playerId) {
   if (!game.players.length) { room.lifeGame = null; return; }
   if (game.status === "playing" && removedCurrentPlayer) nextLifeTurn(game);
   broadcastLifeState(room);
+  scheduleCpuLifeTurn(room);
 }
 
 app.get("/config.js", (_req, res) => {
