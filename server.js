@@ -9,6 +9,14 @@ const io = new Server(server, { cors: { origin: "*" } });
 const PORT = process.env.PORT || 3000;
 const MAX_PEERS = 10;
 
+app.get("/config.js", (_req, res) => {
+  res.type("application/javascript").set("Cache-Control", "no-store").send(
+    "window.NOVALINK_CONFIG = " + JSON.stringify({
+      supabaseUrl: process.env.SUPABASE_URL || "",
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || ""
+    }) + ";"
+  );
+});
 app.use(express.static(path.join(__dirname, "public")));
 app.get("/health", (_req, res) => res.json({ ok: true, app: "NovaLink" }));
 
