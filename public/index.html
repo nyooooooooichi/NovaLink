@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080d19">
+  <meta name="description" content="NovaLink - シンプルで快適なオンラインミーティング">
+  <title>NovaLink — Meet beyond distance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
+  <header class="topbar"><a class="brand" href="/"><span class="brand-mark">N</span><span>Nova<span class="brand-light">Link</span></span></a><span class="top-note"><i></i> YOUR SPACE. YOUR PEOPLE.</span></header>
+  <main>
+    <section class="hero" id="home">
+      <div class="eyebrow"><span></span> CONNECTION, REIMAGINED</div>
+      <h1>距離を超えて、<br><span>つながろう。</span></h1>
+      <p class="lead">会話も、表情も、画面も。必要なものをひとつの場所に。</p>
+      <div class="launch-card">
+        <label for="displayName">YOUR NAME</label><input id="displayName" maxlength="24" placeholder="名前を入力" autocomplete="nickname">
+        <label for="roomId">ROOM ID</label><div class="room-input"><input id="roomId" maxlength="64" placeholder="ルームIDを入力"><button class="icon-btn" id="randomRoom" title="ランダムIDを作成">↗</button></div>
+        <button class="primary-btn" id="joinBtn">ミーティングに参加 <span>→</span></button>
+        <p class="fine-print">最大10人 · 招待リンクで誰でも参加可能</p>
+      </div>
+      <div class="feature-row"><div><b>01</b><span>VIDEO CALL</span></div><div><b>02</b><span>SCREEN SHARE</span></div><div><b>03</b><span>LIVE CHAT</span></div></div>
+    </section>
+
+    <section class="meeting hidden" id="meeting">
+      <div class="meeting-head"><div><div class="eyebrow"><span></span> LIVE SESSION</div><h2 id="meetingTitle">ミーティング</h2><p id="roomLabel"></p></div><div class="count-pill"><span class="live-dot"></span><strong id="memberCount">1</strong> / 10</div></div>
+      <div class="meeting-layout"><div class="video-area"><div class="video-grid" id="videoGrid"><div class="video-tile self-tile" id="selfTile"><video id="localVideo" autoplay playsinline muted></video><span class="video-name">あなた</span></div></div><div class="controls"><button id="micBtn" class="control-btn active">🎙 <span>マイク</span></button><button id="cameraBtn" class="control-btn active">▣ <span>カメラ</span></button><button id="shareBtn" class="control-btn">▧ <span>画面共有</span></button><button id="copyBtn" class="control-btn">↗ <span>招待</span></button><button id="leaveBtn" class="control-btn danger">✕ <span>退出</span></button></div></div>
+      <aside class="chat-panel"><div class="chat-heading">ROOM CHAT <span>● LIVE</span></div><div id="chatMessages" class="chat-messages"><div class="system-message">メッセージで会話を始めましょう。</div></div><form id="chatForm" class="chat-form"><input id="chatInput" maxlength="1000" placeholder="メッセージを入力..." autocomplete="off"><button aria-label="送信">↑</button></form></aside></div>
+    </section>
+  </main>
+  <footer><span>© 2026 NovaLink</span><span>MADE FOR MEANINGFUL CONNECTIONS</span></footer>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/socket.io/socket.io.js"></script><script src="/app.js"></script>
+</body></html>
