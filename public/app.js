@@ -221,6 +221,10 @@ function renderLobbyMessage(message) {
   if (empty) empty.remove();
   const row = document.createElement("article");
   row.className = "lobby-message";
+  const avatar = document.createElement("span");
+  avatar.className = "lobby-message-avatar";
+  avatar.setAttribute("aria-hidden", "true");
+  avatar.textContent = Array.from((message.name || "G").trim())[0] || "G";
   const top = document.createElement("div");
   top.className = "lobby-message-meta";
   const name = document.createElement("strong");
@@ -230,7 +234,7 @@ function renderLobbyMessage(message) {
   time.textContent = formatLobbyTime(message.at);
   const body = document.createElement("p");
   body.textContent = message.text || "";
-  top.append(name, time); row.append(top, body); box.append(row);
+  top.append(name, time); row.append(avatar, top, body); box.append(row);
   while (box.children.length > 60) box.firstElementChild.remove();
   box.scrollTop = box.scrollHeight;
 }
