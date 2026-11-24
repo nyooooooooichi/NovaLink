@@ -1369,6 +1369,7 @@ $("shareBtn").onclick = async () => {
     console.warn("Screen share failed:", e);
     screenStream?.getTracks().forEach(track => track.stop());
     screenStream = null;
+    stopScreenQualityMonitor();
     if (e?.name === "NotAllowedError") toast("画面共有がキャンセルされました。");
     else toast(e?.message || "画面共有を開始できませんでした。");
   } finally {
