@@ -241,8 +241,12 @@ function notifyPush(payload, predicate = () => true, excludeSocketId = null) {
   }
 }
 const lobbyMessages = [];
-const LOBBY_HISTORY_LIMIT = 60;
+const LOBBY_HISTORY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const lastLobbyMessageAt = new Map();
+function pruneLobbyMessages() {
+  const cutoff = Date.now() - LOBBY_HISTORY_WINDOW_MS;
+  while (lobbyMessages.length && Number(lobbyMessages[0].at) < cutoff) lobbyMessages.shift();
+}
 function roomMembers(roomId) {
   return [...(rooms.get(roomId)?.members || [])];
 }
@@ -328,6 +332,7 @@ function leaveRoom(socket, preservePushContext = false) {
 }
 
 io.on("connection", socket => {
+  pruneLobbyMessages();
   socket.emit("lobby:history", lobbyMessages);
   socket.on("lobby:send", ({ text, name } = {}) => {
     const message = String(text || "").trim().slice(0, 500);
@@ -344,8 +349,8 @@ io.on("connection", socket => {
       text: message,
       at: now
     };
+    pruneLobbyMessages();
     lobbyMessages.push(item);
-    if (lobbyMessages.length > LOBBY_HISTORY_LIMIT) lobbyMessages.shift();
     io.emit("lobby:message", item);
     notifyPush({ title: "NovaLink｜" + displayName, body: message, url: "/" }, record => !record.roomId, socket.id);
   });
