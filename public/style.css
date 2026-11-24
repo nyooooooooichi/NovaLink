@@ -236,3 +236,28 @@ footer{color:#8c9bb1;border-top-color:#27354a}
 .auth-message.error{color:#ff9eae}
 .auth-footnote{margin:12px 0 0;color:#7487a2;font-size:9px;line-height:1.6}
 @media(max-width:620px){.account-actions{margin-right:8px;gap:5px}.account-identity{display:none}.account-btn{padding:8px 10px;font-size:10px}.top-note{display:none}.auth-dialog{padding:26px 20px}.auth-provider-grid{gap:5px}.auth-provider{font-size:10px}}
+
+
+/* Room directory and password-protected room creation */
+.room-create-input{display:block;width:100%;margin:7px 0 15px;padding:12px 13px;border:1px solid #52617a;border-radius:9px;background:#0c1421;color:#fff;font:inherit;font-size:13px;outline:none}
+.room-create-input:focus{border-color:#8ca6d4;box-shadow:0 0 0 3px #668cff20}
+.room-browser{max-width:900px;margin:34px auto 60px;animation:heroReveal .55s ease both}
+.room-browser-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:22px}
+.room-browser-head h2{font-size:30px;margin:9px 0;color:#f2f6ff}
+.room-browser-head p{margin:0;color:#aab7ca;font-size:13px;line-height:1.7}
+.room-browser-actions{display:flex;gap:8px;flex:none}
+.room-list{display:grid;gap:10px}
+.room-list-card{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:17px 19px;border:1px solid #3a4962;border-radius:13px;background:#151e2d;box-shadow:0 8px 22px #0002;animation:tileEnter .25s ease both}
+.room-list-info h3{margin:0 0 7px;font-size:16px;color:#f3f6ff}
+.room-list-info p{margin:0;color:#aab7ca;font-size:11px}
+.room-select-btn{flex:none;border:1px solid #526b9a;border-radius:9px;padding:11px 15px;background:#25365a;color:#e7edff;font-weight:700;font-size:12px;cursor:pointer}
+.room-select-btn:disabled{opacity:.45;cursor:not-allowed}
+.room-list-empty{padding:38px 20px;text-align:center;border:1px dashed #465875;border-radius:13px;color:#aab7ca;background:#121b2a;font-size:13px}
+.room-join-panel{margin-top:18px;padding:20px;border:1px solid #586b92;border-radius:14px;background:#18253a;box-shadow:0 16px 40px #0004}
+.room-join-panel small{font-size:9px;letter-spacing:2px;color:#9bb5ff}
+.room-join-panel h3{margin:6px 0 17px;font-size:20px}
+.room-join-panel label{display:block;margin-bottom:7px;font-size:10px;letter-spacing:1.4px;color:#b9c7db}
+.room-join-panel input{width:100%;padding:13px;border:1px solid #52617a;border-radius:9px;background:#0b1320;color:#fff;font:inherit;outline:none}
+.room-join-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:13px}
+.room-join-actions button{width:auto;min-width:130px}
+@media(max-width:620px){.room-browser-head{align-items:flex-start;flex-direction:column}.room-browser-actions{width:100%}.room-list-card{align-items:flex-start}.room-select-btn{padding:10px}.room-join-actions{flex-direction:column}.room-join-actions button{width:100%}}
