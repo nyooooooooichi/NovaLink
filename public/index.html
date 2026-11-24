@@ -120,6 +120,27 @@
         <div class="auth-provider-grid">
           <button type="button" class="auth-provider" data-provider="google"><span class="provider-symbol">G</span> Googleで続行</button>
         </div>
+        <div class="auth-or">またはメールアドレスで</div>
+        <div class="auth-mode-switch" role="tablist" aria-label="メール認証の種類">
+          <button type="button" id="emailLoginTab" class="selected" aria-selected="true">ログイン</button>
+          <button type="button" id="emailSignupTab" aria-selected="false">新規登録</button>
+        </div>
+        <form id="emailLoginForm" class="auth-form">
+          <label for="emailLoginAddress">メールアドレス</label>
+          <input id="emailLoginAddress" class="auth-input" type="email" autocomplete="email" placeholder="name@example.com" required>
+          <label for="emailLoginPassword">パスワード</label>
+          <input id="emailLoginPassword" class="auth-input" type="password" autocomplete="current-password" placeholder="パスワード" required>
+          <button class="auth-submit" id="emailLoginSubmit" type="submit">メールアドレスでログイン</button>
+        </form>
+        <form id="emailSignupForm" class="auth-form hidden">
+          <label for="emailSignupAddress">メールアドレス</label>
+          <input id="emailSignupAddress" class="auth-input" type="email" autocomplete="email" placeholder="name@example.com" required>
+          <label for="emailSignupPassword">パスワード（8文字以上）</label>
+          <input id="emailSignupPassword" class="auth-input" type="password" autocomplete="new-password" minlength="8" placeholder="8文字以上" required>
+          <label for="emailSignupPasswordConfirm">パスワード（確認）</label>
+          <input id="emailSignupPasswordConfirm" class="auth-input" type="password" autocomplete="new-password" minlength="8" placeholder="もう一度入力" required>
+          <button class="auth-submit" id="emailSignupSubmit" type="submit">メールアドレスで新規登録</button>
+        </form>
       </div>
       <div id="authSignedIn" class="hidden">
         <div class="profile-editor">
