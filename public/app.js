@@ -1073,6 +1073,7 @@ if ($("meetingPipBtn") && !("documentPictureInPicture" in window)) {
 function removePeer(id) {
   const peer = peers.get(id);
   if (peer) {
+    clearPeerRecovery(peer);
     peer.pc.close();
     peer.audioElements?.forEach(audio => {
       audio.pause();
@@ -1106,9 +1107,22 @@ function renderParticipants() {
   });
 }
 function updateConnectionState() {
-  const states = [...peers.values()].map(p => p.pc.connectionState);
-  $("connectionStatus").textContent = !states.length ? "自分のみ" : states.every(s => s === "connected") ? "接続良好" : "接続中";
-  $("connectionStatus").classList.toggle("is-good", states.length > 0 && states.every(s => s === "connected"));
+  const status = $("connectionStatus");
+  if (!status) return;
+  const list = [...peers.values()];
+  const states = list.map(peer => peer.pc.connectionState);
+  const recovering = list.some(peer => peer.recovering);
+  const unstable = states.some(state => state === "disconnected" || state === "failed");
+  const allConnected = states.length > 0 && states.every(state => state === "connected");
+  let label = !socket.connected ? "サーバー切断" :
+    !states.length ? "自分のみ" :
+    allConnected ? "接続良好" :
+    recovering ? "自動復旧中" :
+    unstable ? "通信不安定" : "接続中";
+  status.textContent = label;
+  status.classList.toggle("is-good", allConnected);
+  status.classList.toggle("is-warning", unstable || !socket.connected);
+  status.classList.toggle("is-recovering", recovering);
 }
 socket.on("peer:joined", async ({ id, name }) => {
   await makePeer(id, name, false); renderParticipants(); toast(name + " が参加しました");
@@ -1333,26 +1347,35 @@ $("lifeCpuRemoveBtn").onclick = () => lifeRequest("life:cpu:remove");
 $("lifeStartBtn").onclick = () => lifeRequest("life:start");
 $("lifeRollBtn").onclick = () => lifeRequest("life:roll");
 socket.on("signal", async ({ from, data }) => {
+  if (!from || !data) return;
   let peer = peers.get(from);
   if (!peer) peer = await makePeer(from, "Guest", false);
+  if (!peer) return;
   const pc = peer.pc;
   try {
     if (data.description) {
-      await pc.setRemoteDescription(data.description);
-      // ICE candidates may arrive before the offer/answer on slower mobile
-      // networks. Apply queued candidates only after the remote description.
+      const description = data.description;
+      const offerCollision = description.type === "offer" && (peer.makingOffer || pc.signalingState !== "stable");
+      peer.ignoreOffer = !peer.polite && offerCollision;
+      if (peer.ignoreOffer) return;
+      if (offerCollision && peer.polite) {
+        await pc.setLocalDescription({ type: "rollback" });
+      }
+      await pc.setRemoteDescription(description);
       const queued = peer.pendingCandidates || [];
       peer.pendingCandidates = [];
       for (const candidate of queued) {
         try { await pc.addIceCandidate(candidate); }
         catch (candidateError) { console.warn("Queued ICE candidate rejected:", candidateError); }
       }
-      if (data.description.type === "offer") {
+      if (description.type === "offer") {
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         socket.emit("signal", { to: from, data: { description: pc.localDescription } });
       }
+      if (pc.connectionState === "connected") clearPeerRecovery(peer);
     } else if (data.candidate) {
+      if (peer.ignoreOffer) return;
       if (pc.remoteDescription?.type) {
         await pc.addIceCandidate(data.candidate);
       } else {
@@ -1360,7 +1383,10 @@ socket.on("signal", async ({ from, data }) => {
         peer.pendingCandidates.push(data.candidate);
       }
     }
-  } catch (e) { console.error("WebRTC signaling error", e); }
+  } catch (error) {
+    console.error("WebRTC signaling error:", error);
+    if (pc.connectionState !== "connected") schedulePeerRecovery(from, 1800, "signaling-error");
+  }
 });
 function addChat(name, message, mine, at = Date.now()) {
   const box = $("chatMessages");
