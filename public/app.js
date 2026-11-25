@@ -765,42 +765,96 @@ $("selectedRoomJoinBtn").onclick = joinSelectedRoom;
 $("roomPassword").addEventListener("keydown", event => { if (event.key === "Enter") joinSelectedRoom(); });
 
 function outgoingStream() { return processedStream || localStream; }
+function clearPeerRecovery(peer) {
+  if (!peer) return;
+  if (peer.recoveryTimer) clearTimeout(peer.recoveryTimer);
+  if (peer.recoveryWatchdog) clearTimeout(peer.recoveryWatchdog);
+  peer.recoveryTimer = null;
+  peer.recoveryWatchdog = null;
+  peer.recoveryAttempts = 0;
+  peer.recovering = false;
+}
+function schedulePeerRecovery(id, delay = 1200, reason = "connection") {
+  const peer = peers.get(id);
+  if (!peer || peer.pc.signalingState === "closed" || peer.recoveryTimer) return;
+  peer.recovering = true;
+  updateConnectionState();
+  peer.recoveryTimer = window.setTimeout(async () => {
+    peer.recoveryTimer = null;
+    if (peers.get(id) !== peer || peer.pc.signalingState === "closed") return;
+    if (!socket.connected || !roomId) {
+      updateConnectionState();
+      return;
+    }
+    if (peer.pc.signalingState !== "stable") {
+      schedulePeerRecovery(id, 1800, "signaling-busy");
+      return;
+    }
+    if (peer.recoveryAttempts >= 4) {
+      peer.recovering = false;
+      updateConnectionState();
+      console.warn("Peer recovery attempts exhausted:", id, reason);
+      return;
+    }
+    peer.recoveryAttempts += 1;
+    peer.makingOffer = true;
+    try {
+      const offer = await peer.pc.createOffer({ iceRestart: true });
+      if (peers.get(id) !== peer || peer.pc.signalingState === "closed") return;
+      await peer.pc.setLocalDescription(offer);
+      socket.emit("signal", { to: id, data: { description: peer.pc.localDescription } });
+      console.info("WebRTC ICE restart requested:", id, peer.recoveryAttempts);
+      if (peer.recoveryWatchdog) clearTimeout(peer.recoveryWatchdog);
+      peer.recoveryWatchdog = window.setTimeout(() => {
+        peer.recoveryWatchdog = null;
+        if (peers.get(id) === peer && peer.pc.connectionState !== "connected") {
+          schedulePeerRecovery(id, Math.min(12000, 1800 * peer.recoveryAttempts), "restart-timeout");
+        }
+      }, 9000);
+    } catch (error) {
+      console.warn("WebRTC ICE restart failed:", error);
+      schedulePeerRecovery(id, Math.min(12000, 1800 * peer.recoveryAttempts), "restart-error");
+    } finally {
+      peer.makingOffer = false;
+    }
+  }, delay);
+}
 async function makePeer(id, name, initiator) {
   if (peers.has(id)) return peers.get(id);
   const pc = new RTCPeerConnection(config);
-  peers.set(id, { pc, name, pendingCandidates: [] });
+  const peer = {
+    pc, name, pendingCandidates: [], audioElements: new Map(),
+    polite: String(selfId || "") > String(id),
+    makingOffer: false, ignoreOffer: false,
+    recoveryTimer: null, recoveryWatchdog: null,
+    recoveryAttempts: 0, recovering: false
+  };
+  peers.set(id, peer);
   const stream = outgoingStream();
   const cameraTrack = stream?.getVideoTracks()[0];
   const audioTracks = stream?.getAudioTracks() || [];
-  // Send camera and microphone in the same MediaStream. This keeps the
-  // stream association stable on iOS WebKit and avoids one track replacing another.
+  // Keep camera and microphone associated with the same stream for WebKit compatibility.
   if (cameraTrack) pc.addTrack(cameraTrack, stream);
   audioTracks.forEach(track => pc.addTrack(track, stream));
   const screenMediaStream = new MediaStream();
   const screenTransceiver = pc.addTransceiver("video", { direction: "sendrecv", streams: [screenMediaStream] });
-  peers.get(id).screenSender = screenTransceiver.sender;
+  peer.screenSender = screenTransceiver.sender;
   if (screenStream?.getVideoTracks()[0]) await screenTransceiver.sender.replaceTrack(screenStream.getVideoTracks()[0]);
 
-  // Reserve a separate audio sender for captured tab/system audio. This avoids
-  // renegotiating the peer connection after the user starts sharing.
+  // Reserve a separate sender for captured tab/system audio.
   const screenAudioMediaStream = new MediaStream();
   const screenAudioTransceiver = pc.addTransceiver("audio", { direction: "sendrecv", streams: [screenAudioMediaStream] });
-  peers.get(id).screenAudioSender = screenAudioTransceiver.sender;
+  peer.screenAudioSender = screenAudioTransceiver.sender;
   const existingScreenAudio = screenStream?.getAudioTracks?.()[0];
   if (existingScreenAudio) await screenAudioTransceiver.sender.replaceTrack(existingScreenAudio);
-  pc.onicecandidate = e => { if (e.candidate) socket.emit("signal", { to: id, data: { candidate: e.candidate } }); };
-  pc.ontrack = e => {
-    const track = e.track;
-    const incomingStream = e.streams?.[0] || new MediaStream([track]);
 
-    // Audio and video are sent as separate streams. Never let an audio-only
-    // stream replace the camera video element (especially on iOS Safari).
+  pc.onicecandidate = event => {
+    if (event.candidate && socket.connected) socket.emit("signal", { to: id, data: { candidate: event.candidate } });
+  };
+  pc.ontrack = event => {
+    const track = event.track;
+    const incomingStream = event.streams?.[0] || new MediaStream([track]);
     if (track.kind === "audio") {
-      const peer = peers.get(id);
-      if (!peer) return;
-      // A peer can send both microphone audio and captured screen audio.
-      // Keep one playback element per remote audio track so they never overwrite.
-      if (!peer.audioElements) peer.audioElements = new Map();
       let audio = peer.audioElements.get(track.id);
       if (!audio) {
         audio = document.createElement("audio");
@@ -814,41 +868,56 @@ async function makePeer(id, name, initiator) {
           audio.pause();
           audio.srcObject = null;
           audio.remove();
-          peer.audioElements?.delete(track.id);
+          peer.audioElements.delete(track.id);
         }, { once: true });
       }
       audio.srcObject = incomingStream;
-      audio.play().catch(error => {
-        console.warn("Remote audio playback needs user interaction:", error);
-      });
+      audio.play().catch(error => console.warn("Remote audio playback needs user interaction:", error));
       return;
     }
-
     if (track.kind === "video") {
-      const isScreen = e.transceiver === screenTransceiver;
+      const isScreen = event.transceiver === screenTransceiver;
       addVideo(id, name, incomingStream, isScreen);
-      // WebKit can deliver the track before its first frame is available.
-      // Retry playback when the remote track becomes unmuted.
-      track.addEventListener("unmute", () => {
-        const tile = document.getElementById("tile-" + id);
-        const target = tile?.querySelector(isScreen ? ".screen-feed" : ".camera-feed");
-        if (target && target.srcObject) target.play().catch(error => {
-          console.warn("Remote video playback is still waiting:", error);
-        });
+      const tile = () => document.getElementById("tile-" + id);
+      const target = () => tile()?.querySelector(isScreen ? ".screen-feed" : ".camera-feed");
+      track.addEventListener("mute", () => {
+        tile()?.classList.add("media-paused");
       });
+      const resumeVideo = () => {
+        tile()?.classList.remove("media-paused", "media-buffering");
+        const video = target();
+        if (video?.srcObject) video.play().catch(error => console.warn("Remote video resume deferred:", error));
+      };
+      track.addEventListener("unmute", resumeVideo);
+      track.addEventListener("ended", () => tile()?.classList.remove("media-paused", "media-buffering"), { once: true });
+      resumeVideo();
     }
   };
-  pc.onconnectionstatechange = () => {
-    const state = pc.connectionState;
-    if (["failed", "closed"].includes(state)) removePeer(id);
+
+  const handlePeerState = () => {
+    if (pc.connectionState === "connected" || pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
+      clearPeerRecovery(peer);
+    } else if (pc.connectionState === "failed" || pc.iceConnectionState === "failed") {
+      schedulePeerRecovery(id, 500, "failed");
+    } else if (pc.connectionState === "disconnected" || pc.iceConnectionState === "disconnected") {
+      schedulePeerRecovery(id, 5000, "disconnected");
+    }
     updateConnectionState();
   };
+  pc.onconnectionstatechange = handlePeerState;
+  pc.oniceconnectionstatechange = handlePeerState;
+
   if (initiator) {
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    socket.emit("signal", { to: id, data: { description: pc.localDescription } });
+    peer.makingOffer = true;
+    try {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      socket.emit("signal", { to: id, data: { description: pc.localDescription } });
+    } finally {
+      peer.makingOffer = false;
+    }
   }
-  return peers.get(id);
+  return peer;
 }
 function addVideo(id, name, stream, isScreen = false) {
   let tile = document.getElementById("tile-" + id);
