@@ -15,8 +15,8 @@
 <header class="shell top"><a class="brand" href="./"><span class="mark">N</span><span>NOVALINK<small>UPDATE CENTER</small></span></a><a class="toplink" href="/">← NovaLinkへ戻る</a></header>
 <main class="shell">
 <section class="hero"><div class="eyebrow">OFFICIAL PRODUCT JOURNAL</div><h1>進化の記録を、<br><span>ここに。</span></h1><p>NovaLinkの新機能、改善、不具合修正をまとめた公式アップデートセンター。これまでの変更と、これからの進化をお届けします。</p><div class="hero-meta"><span class="pill">PATCH NOTES</span><span class="pill">FEATURE UPDATES</span><span class="pill">DEVELOPMENT LOG</span></div></section>
-<section class="spotlight"><div class="spot-inner"><div><div class="spot-label">LATEST DEVELOPMENT</div><h2>SCREEN SHARE 2.0</h2><p>高画質キャプチャ・共有音声・デスクトップとモバイルの表示改善。<br>現在、GitHubにコード反映済み。実機検証・公開状態は確認中です。</p></div><span class="spot-tag">IN DEVELOPMENT</span></div></section>
-<section><div class="section-head"><div><h2>アップデート履歴</h2><p>GitHubの変更履歴と開発記録をもとに掲載しています。</p></div><span class="count" id="count">20 RECORDS</span></div>
+<section class="spotlight"><div class="spot-inner"><div><div class="spot-label">LATEST DEVELOPMENT</div><h2>NOVA CORE 3.2 — 接続安定性強化</h2><p>WebRTCの切断検知・ICE再接続・映像再生の復旧処理を強化。<br>GitHubにコード反映済み。複数端末での実機検証は未完了です。</p></div><span class="spot-tag">CODE UPDATED</span></div></section>
+<section><div class="section-head"><div><h2>アップデート履歴</h2><p>GitHubの変更履歴と開発記録をもとに掲載しています。</p></div><span class="count" id="count">25 RECORDS</span></div>
 <div class="toolbar"><input class="search" id="search" type="search" placeholder="アップデートを検索…"><div class="filters"><button class="filter active" data-filter="all">すべて</button><button class="filter" data-filter="call">通話</button><button class="filter" data-filter="chat">チャット</button><button class="filter" data-filter="share">画面共有</button><button class="filter" data-filter="ui">UI・操作性</button></div></div>
 <div class="feed" id="feed"></div><div class="empty" id="empty">一致するアップデートがありません。</div></section>
 <section class="roadmap"><div class="section-head"><div><h2>開発ノート</h2><p>確定したリリースと、検討中のアイデアを区別して掲載します。</p></div></div><div class="roadmap-card"><div><h3>NOVA CASINO</h3><p>通話内で楽しめる仮想チップ制ゲーム空間の構想。<br>現時点では企画段階で、リリース時期は未定です。</p></div><span class="roadmap-status">CONCEPT</span></div></section>
@@ -24,6 +24,12 @@
 <footer class="shell footer"><strong>NOVALINK / UPDATE CENTER</strong><span>Built for every connection. © NovaLink</span></footer>
 <script>
 const updates=[
+{title:"NOVA CORE 3.2 — 通話接続の自動復旧を強化",category:"call",label:"NOVA CORE 3.2",desc:"WebRTCの接続断を検知し、ICE restartによる自動復旧を最大4回試行。Offer衝突時のロールバック、ICE Candidateの待機処理、接続状態表示、映像再生の再試行を追加しました。複数端末での実機検証は未完了です。",tags:["自動復旧","WebRTC","接続状態"],sha:"219f260"},
+{title:"起動演出を次回起動からON/OFF可能に",category:"ui",label:"SETTINGS",desc:"設定画面に起動演出のON/OFF項目を追加。保存した設定を次回起動時に反映し、OFFの場合は起動演出をスキップします。",tags:["設定","起動演出"],sha:"f17e395"},
+{title:"デスクトップ起動画面の重なりを調整",category:"ui",label:"BOOT UI",desc:"PCの画面サイズ・高さに応じて起動ロゴ、キャプション、進行表示の間隔とサイズを調整しました。実機での最終確認は未完了です。",tags:["PC","レスポンシブ","起動画面"],sha:"6df631a"},
+{title:"ボタン操作の触覚的フィードバックを強化",category:"ui",label:"INTERACTION",desc:"ボタン押下時の縮小・浮き上がり・リップル演出とフォーカス表示を追加し、操作時の反応を強化しました。",tags:["ボタン演出","UI"],sha:"7ecf35f"},
+{title:"SCREEN SHARE 3.1 — Chrome小窓表示",category:"share",label:"SCREEN SHARE",desc:"対応するChrome環境で、通話参加者のカメラ映像を別ウィンドウに表示する小窓機能を追加しました。画面共有映像そのものではなく、参加者カメラ用の小窓です。",tags:["小窓","Chrome","通話"],sha:"2eb9d26"},
+{title:"SCREEN SHARE 2.0 — 表示レイアウト改善",category:"share",label:"SCREEN SHARE",desc:"共有中の画面を大きく表示し、カメラ映像を小窓として配置。PC・スマートフォンの画面幅に合わせたレイアウトを追加しました。",tags:["レスポンシブ","画面表示"],sha:"7c6e9ed"},
 {title:"SCREEN SHARE 2.0 — 表示レイアウト改善",category:"share",label:"SCREEN SHARE",desc:"共有中の画面を大きく表示し、カメラ映像を小窓として配置。PC・スマートフォンの画面幅に合わせたレイアウトを追加しました。",tags:["レスポンシブ","画面表示"],sha:"7c6e9ed"},
 {title:"画面共有音声トラックの分離",category:"share",label:"SCREEN SHARE",desc:"マイク音声と画面共有音声を別々のトラックとして扱い、複数の音声が互いに上書きされないようにしました。",tags:["音声","WebRTC"],sha:"e95bdf1"},
 {title:"高画質画面共有・共有音声対応",category:"share",label:"SCREEN SHARE",desc:"高解像度を目安にした画面取得、細部を優先するcontentHint、対応ブラウザでの共有音声取得を追加しました。",tags:["高画質","共有音声"],sha:"45a952e"},
