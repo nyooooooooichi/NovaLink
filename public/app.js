@@ -386,6 +386,8 @@ async function toggleLobbyNotifications() {
   }
 }
 socket.on("connect", restorePushSubscription);
+socket.on("connect", () => updateConnectionState());
+socket.on("disconnect", () => updateConnectionState());
 function renderMeetingLobbyMessage(message) {
   const box = $("meetingLobbyMessages");
   if (!box || !message) return;
