@@ -1827,6 +1827,35 @@ const runNovaBoot = () => {
   if (startButton) startButton.addEventListener("click", startBoot);
 
 };
+
+// Global tactile button feedback: a short press pulse and a light ripple at the touch point.
+const setupNovaButtonFeedback = () => {
+  if (document.documentElement.dataset.novaButtonFeedback === "1") return;
+  document.documentElement.dataset.novaButtonFeedback = "1";
+  const press = event => {
+    const button = event.target.closest("button");
+    if (!button || button.disabled || button.closest(".hidden,[hidden]")) return;
+    button.classList.add("nova-pressing");
+    const rect = button.getBoundingClientRect();
+    const ripple = document.createElement("span");
+    ripple.className = "nova-ripple";
+    const x = Number.isFinite(event.clientX) && event.clientX ? event.clientX - rect.left : rect.width / 2;
+    const y = Number.isFinite(event.clientY) && event.clientY ? event.clientY - rect.top : rect.height / 2;
+    ripple.style.left = x + "px";
+    ripple.style.top = y + "px";
+    button.append(ripple);
+    window.setTimeout(() => ripple.remove(), 720);
+  };
+  const release = event => {
+    const button = event.target.closest?.("button");
+    if (button) button.classList.remove("nova-pressing");
+  };
+  document.addEventListener("pointerdown", press, {passive:true});
+  document.addEventListener("pointerup", release, {passive:true});
+  document.addEventListener("pointercancel", release, {passive:true});
+  document.addEventListener("pointerleave", release, {passive:true});
+};
+
 const setupNovaPointerGlow = () => {
   const glow = $("pointerGlow");
   if (glow && matchMedia("(pointer:fine)").matches) {
