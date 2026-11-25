@@ -1836,6 +1836,7 @@ const setupNovaButtonFeedback = () => {
     const button = event.target.closest("button");
     if (!button || button.disabled || button.closest(".hidden,[hidden]")) return;
     button.classList.add("nova-pressing");
+    if (getComputedStyle(button).position === "static") button.style.position = "relative";
     const rect = button.getBoundingClientRect();
     const ripple = document.createElement("span");
     ripple.className = "nova-ripple";
@@ -1870,7 +1871,9 @@ const setupNovaPointerGlow = () => {
 if (document.readyState === "loading") {
   window.addEventListener("DOMContentLoaded", runNovaBoot, { once: true });
   window.addEventListener("DOMContentLoaded", setupNovaPointerGlow, { once: true });
+  window.addEventListener("DOMContentLoaded", setupNovaButtonFeedback, { once: true });
 } else {
   runNovaBoot();
   setupNovaPointerGlow();
+  setupNovaButtonFeedback();
 }
