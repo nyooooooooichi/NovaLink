@@ -959,6 +959,17 @@ function addVideo(id, name, stream, isScreen = false) {
       console.warn("Remote video playback deferred:", error);
     });
   };
+  const markBuffering = () => {
+    tile.classList.add("media-buffering");
+    window.setTimeout(() => {
+      if (!video.srcObject || !video.paused || video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) return;
+      startPlayback();
+    }, 900);
+  };
+  video.addEventListener("waiting", markBuffering);
+  video.addEventListener("stalled", markBuffering);
+  video.addEventListener("playing", () => tile.classList.remove("media-buffering"));
+  video.addEventListener("canplay", () => tile.classList.remove("media-buffering"));
   // Try immediately and again at the media readiness milestones used by iOS.
   startPlayback();
   ["loadedmetadata", "loadeddata", "canplay"].forEach(eventName => {
