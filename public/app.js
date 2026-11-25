@@ -1,7 +1,7 @@
 const socket = io();
 const $ = (id) => document.getElementById(id);
 const NOVA_SETTINGS_KEY = "novalink-user-settings-v1";
-const NOVA_DEFAULT_SETTINGS = { fps: "30", resolution: "720", renderMode: "auto", brightness: 100, uiScale: "1", accent: "blue", reduceMotion: false, volume: 70, bootSound: true, noise: true, autoGain: true };
+const NOVA_DEFAULT_SETTINGS = { fps: "30", resolution: "720", renderMode: "auto", brightness: 100, uiScale: "1", accent: "blue", reduceMotion: false, volume: 70, bootSound: true, noise: true, autoGain: true, bootAnimation: true };
 let novaSettings = (() => {
   try { return { ...NOVA_DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(NOVA_SETTINGS_KEY) || "{}") }; }
   catch { return { ...NOVA_DEFAULT_SETTINGS }; }
@@ -16,7 +16,7 @@ function applyNovaSettings() {
   root.style.fontSize = (16 * Number(novaSettings.uiScale || 1)) + "px";
   document.body.classList.toggle("nova-reduce-motion", !!novaSettings.reduceMotion);
   document.body.classList.toggle("nova-performance-mode", novaSettings.renderMode === "performance");
-  const fields = { settingFps:"fps", settingResolution:"resolution", settingRenderMode:"renderMode", settingBrightness:"brightness", settingUiScale:"uiScale", settingAccent:"accent", settingReduceMotion:"reduceMotion", settingVolume:"volume", settingBootSound:"bootSound", settingNoise:"noise", settingAutoGain:"autoGain" };
+  const fields = { settingFps:"fps", settingResolution:"resolution", settingRenderMode:"renderMode", settingBrightness:"brightness", settingUiScale:"uiScale", settingAccent:"accent", settingReduceMotion:"reduceMotion", settingVolume:"volume", settingBootSound:"bootSound", settingBootAnimation:"bootAnimation", settingNoise:"noise", settingAutoGain:"autoGain" };
   Object.entries(fields).forEach(([id,key]) => { const el=$(id); if(el) { if(el.type==="checkbox") el.checked=!!novaSettings[key]; else el.value=String(novaSettings[key]); } });
   if($("brightnessValue")) $("brightnessValue").textContent = novaSettings.brightness + "%";
   if($("volumeValue")) $("volumeValue").textContent = novaSettings.volume + "%";
@@ -1690,6 +1690,12 @@ socket.on("room:closed", async ({ message } = {}) => {
 const runNovaBoot = () => {
   const boot = $("bootScreen");
   if (!boot || boot.dataset.bootStarted === "1") return;
+  if (novaSettings.bootAnimation === false) {
+    boot.dataset.bootStarted = "1";
+    boot.style.display = "none";
+    try { initAuth(); } catch (error) { console.error("NovaLink auth initialization:", error); }
+    return;
+  }
   try { initAuth(); } catch (error) { console.error("NovaLink auth initialization:", error); }
   let audioContext = null, masterGain = null, reverb = null, audioStarted = false, bootStartedAt = 0;
   const updateBoot = (message, value, activeStep) => {
