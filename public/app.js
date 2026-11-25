@@ -1815,9 +1815,7 @@ const runNovaBoot = () => {
     } catch (error) {
       console.warn("NovaLink audio could not start:", error);
     }
-    boot.classList.remove("done");
-    boot.classList.add("sequence-start");
-    boot.classList.remove("sequence-scan","sequence-core","sequence-lock","sequence-launch");
+    boot.classList.remove("done","sequence-scan","sequence-core","sequence-lock","sequence-launch");
     boot.classList.add("sequence-start");
     const log=(id,message,state)=>{const el=$(id);if(el){el.textContent=message;const badge=el.parentElement?.querySelector("b");if(badge)badge.textContent=state;}};
     const clock=$("bootClock");
