@@ -1832,3 +1832,19 @@ footer{border-top:1px solid rgba(135,171,210,.1)}
   .boot-command-feed{margin-top:8px!important}
   .boot-progress{margin-top:16px!important}
 }
+
+
+/* NOVA CORE 3.2 — connection recovery and stalled media feedback */
+#connectionStatus.is-warning{color:#ffbd78!important;border-color:#9a653b!important;background:rgba(92,52,22,.22)!important}
+#connectionStatus.is-recovering{color:#8fdfff!important;border-color:#397e9e!important;background:rgba(27,94,125,.2)!important;animation:novaConnectionPulse 1.8s ease-in-out infinite}
+@keyframes novaConnectionPulse{50%{box-shadow:0 0 0 4px rgba(87,190,238,.08),0 0 18px rgba(87,190,238,.16)}}
+.video-tile.media-buffering:after{content:"映像を再接続中…";position:absolute;inset:auto 10px 10px auto;padding:6px 9px;border:1px solid #6e829e88;border-radius:7px;background:#07101dcc;color:#dceaff;font-size:10px;letter-spacing:.04em;pointer-events:none;backdrop-filter:blur(8px)}
+.video-tile.media-paused:after{content:"映像信号待機中";position:absolute;inset:auto 10px 10px auto;padding:6px 9px;border:1px solid #6e829e88;border-radius:7px;background:#07101dcc;color:#dceaff;font-size:10px;pointer-events:none}
+
+
+/* NOVA CORE 3.2 — connection recovery and stalled media feedback */
+#connectionStatus.is-warning{color:#ffbd78!important;border-color:#9a653b!important;background:rgba(92,52,22,.22)!important}
+#connectionStatus.is-recovering{color:#8fdfff!important;border-color:#397e9e!important;background:rgba(27,94,125,.2)!important;animation:novaConnectionPulse 1.8s ease-in-out infinite}
+@keyframes novaConnectionPulse{50%{box-shadow:0 0 0 4px rgba(87,190,238,.08),0 0 18px rgba(87,190,238,.16)}}
+.video-tile.media-buffering:after{content:"映像を再接続中…";position:absolute;inset:auto 10px 10px auto;padding:6px 9px;border:1px solid #6e829e88;border-radius:7px;background:#07101dcc;color:#dceaff;font-size:10px;letter-spacing:.04em;pointer-events:none;backdrop-filter:blur(8px)}
+.video-tile.media-paused:after{content:"映像信号待機中";position:absolute;inset:auto 10px 10px auto;padding:6px 9px;border:1px solid #6e829e88;border-radius:7px;background:#07101dcc;color:#dceaff;font-size:10px;pointer-events:none}
