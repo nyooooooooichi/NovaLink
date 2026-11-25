@@ -1689,127 +1689,143 @@ socket.on("room:closed", async ({ message } = {}) => {
 // NovaLink cinematic boot: visuals always start; audio gracefully follows browser policy.
 const runNovaBoot = () => {
   const boot = $("bootScreen");
-  if (!boot || boot.dataset.bootBound === "1") return;
-  boot.dataset.bootBound = "1";
+  if (!boot || boot.dataset.bootStarted === "1") return;
   try { initAuth(); } catch (error) { console.error("NovaLink auth initialization:", error); }
-
-  const $v = id => document.getElementById(id);
-  const status = $v("bootStatus"), percent = $v("bootPercent"), fill = $v("bootProgressFill");
-  const stages = boot.querySelectorAll(".v4-stage-list span");
-  const coreState = $v("v4CoreState"), energy = $v("v4Energy"), linkState = $v("v4LinkState");
-  const logs = [$v("bootLogOne"), $v("bootLogTwo"), $v("bootLogThree")];
-  const setLog = (index, message) => { if (logs[index]) logs[index].textContent = message; };
-  const update = (message, value, activeStage) => {
-    if (status) status.textContent = message;
-    if (percent) percent.textContent = String(value).padStart(2, "0") + "%";
-    if (fill) fill.style.width = value + "%";
-    stages.forEach((item, index) => item.classList.toggle("active", index <= activeStage));
-    if (energy) energy.innerHTML = (value / 10).toFixed(1) + ' <i>%</i>';
+  let audioContext = null, masterGain = null, reverb = null, audioStarted = false, bootStartedAt = 0;
+  const updateBoot = (message, value, activeStep) => {
+    const status=$("bootStatus"), percent=$("bootPercent"), fill=$("bootProgressFill");
+    const steps=boot.querySelectorAll(".boot-progress-steps span");
+    if(status)status.textContent=message;if(percent)percent.textContent=String(value).padStart(2,"0")+"%";
+    if(fill)fill.style.width=value+"%";steps.forEach((step,index)=>step.classList.toggle("active",index<=activeStep));
   };
-
-  let audioContext = null;
-  const playStartupAudio = () => {
-    if (!novaSettings.bootSound || Number(novaSettings.volume) <= 0) return;
-    const AudioCtor = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtor) return;
-    try {
-      audioContext = new AudioCtor();
-      const master = audioContext.createGain();
-      const compressor = audioContext.createDynamicsCompressor();
-      master.gain.value = Math.min(1, Number(novaSettings.volume || 70) / 100) * .62;
-      compressor.threshold.value = -20;
-      compressor.ratio.value = 4;
-      compressor.attack.value = .008;
-      compressor.release.value = .24;
-      master.connect(compressor);
-      compressor.connect(audioContext.destination);
-      const now = audioContext.currentTime;
-      const note = (frequency, delay, duration, volume, type = "sine", end = null) => {
-        const osc = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(frequency, now + delay);
-        if (end) osc.frequency.exponentialRampToValueAtTime(end, now + delay + duration);
-        gain.gain.setValueAtTime(.0001, now + delay);
-        gain.gain.exponentialRampToValueAtTime(volume, now + delay + .035);
-        gain.gain.exponentialRampToValueAtTime(.0001, now + delay + duration);
-        osc.connect(gain); gain.connect(master);
-        osc.start(now + delay); osc.stop(now + delay + duration + .04);
-      };
-      const impact = (at, strength = 1) => {
-        note(42, at, 1.2, .25 * strength, "sine", 25);
-        note(86, at + .02, .72, .12 * strength, "triangle", 34);
-        note(180, at + .03, .45, .045 * strength, "sawtooth", 65);
-      };
-      impact(0, 1.1);
-      [55, 82.4, 110, 164.8, 220, 329.6].forEach((hz, i) => note(hz, 1.15 + i * .055, 2.1, .055 - i * .004, "sine"));
-      [660, 880, 1100].forEach((hz, i) => note(hz, 3.45 + i * .16, .18, .055, "square", hz * .72));
-      [196, 246.9, 293.7, 392, 493.9, 587.3, 784].forEach((hz, i) => note(hz, 5.2 + i * .045, 1.55, .052 - i * .003, "sine"));
-      impact(8.15, 1.25);
-      [392, 523.3, 659.3, 784, 1046.5, 1318.5, 1568].forEach((hz, i) => note(hz, 8.45 + i * .05, .9, .055 - i * .003, "sine"));
-      audioContext.resume().catch(error => console.warn("NovaLink boot audio resume failed:", error));
-    } catch (error) {
-      console.warn("NovaLink boot audio unavailable:", error);
+  const createAudioGraph = () => {
+    const AudioCtor=window.AudioContext||window.webkitAudioContext;
+    if(!AudioCtor)return false;
+    if(audioContext)return true;
+    audioContext=new AudioCtor();
+    masterGain=audioContext.createGain();masterGain.gain.value=(Number(novaSettings.volume ?? 70)/100)*.72;
+    const compressor=audioContext.createDynamicsCompressor();
+    compressor.threshold.value=-18;compressor.knee.value=16;compressor.ratio.value=4;
+    compressor.attack.value=.006;compressor.release.value=.22;
+    reverb=audioContext.createConvolver();
+    const len=Math.floor(audioContext.sampleRate*1.25);
+    const impulse=audioContext.createBuffer(2,len,audioContext.sampleRate);
+    for(let ch=0;ch<2;ch++){
+      const data=impulse.getChannelData(ch);
+      for(let i=0;i<len;i++)data[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.5)*.24;
     }
+    reverb.buffer=impulse;
+    const wet=audioContext.createGain();wet.gain.value=.16;
+    reverb.connect(wet);wet.connect(compressor);
+    masterGain.connect(compressor);compressor.connect(audioContext.destination);
+    return true;
   };
-
-  const startButton = $v("bootStartButton");
-  if (!startButton) return;
-  startButton.addEventListener("click", () => {
+  const tone=(f,at,duration,volume,type="sine",endFrequency=null,wet=true)=>{
+    if(!audioContext||!masterGain)return;
+    const osc=audioContext.createOscillator(),gain=audioContext.createGain(),now=audioContext.currentTime;
+    osc.type=type;osc.frequency.setValueAtTime(Math.max(20,f),now+at);
+    if(endFrequency)osc.frequency.exponentialRampToValueAtTime(Math.max(20,endFrequency),now+at+duration);
+    gain.gain.setValueAtTime(.0001,now+at);
+    gain.gain.exponentialRampToValueAtTime(Math.max(.0002,volume),now+at+Math.min(.045,duration*.2));
+    gain.gain.exponentialRampToValueAtTime(.0001,now+at+duration);
+    osc.connect(gain);gain.connect(masterGain);if(wet&&reverb)gain.connect(reverb);
+    osc.start(now+at);osc.stop(now+at+duration+.03);
+  };
+  const sweep=(at,duration,volume,low,high)=>{
+    if(!audioContext||!masterGain)return;
+    const len=Math.max(1,Math.floor(audioContext.sampleRate*duration));
+    const buffer=audioContext.createBuffer(1,len,audioContext.sampleRate),data=buffer.getChannelData(0);
+    for(let i=0;i<len;i++)data[i]=(Math.random()*2-1)*(1-i/len);
+    const source=audioContext.createBufferSource(),filter=audioContext.createBiquadFilter(),gain=audioContext.createGain(),now=audioContext.currentTime;
+    source.buffer=buffer;filter.type="lowpass";filter.frequency.setValueAtTime(low,now+at);
+    filter.frequency.exponentialRampToValueAtTime(high,now+at+duration);filter.Q.value=.7;
+    gain.gain.setValueAtTime(.0001,now+at);gain.gain.linearRampToValueAtTime(volume,now+at+duration*.22);
+    gain.gain.exponentialRampToValueAtTime(.0001,now+at+duration);
+    source.connect(filter);filter.connect(gain);gain.connect(masterGain);if(reverb)gain.connect(reverb);
+    source.start(now+at);
+  };
+  const playBootSound=()=>{
+    if(audioStarted||!audioContext||!novaSettings.bootSound||Number(novaSettings.volume)<=0)return;
+    audioStarted=true;
+    const t=(f,at,duration,volume,type="sine",endFrequency=null,wet=true)=>tone(f,at,duration,volume,type,endFrequency,wet);
+    const s=(at,duration,volume,low,high)=>sweep(at,duration,volume,low,high);
+    const hit=(at,amount=1)=>{
+      t( thirty,at,1.25,.34*amount,"sine",24,false);
+      t( sixty,at+.018,.72,.18*amount,"triangle",30,false);
+      t(110,at+.025,.38,.085*amount,"sawtooth",42,false);
+      s(at,.62,.19*amount,65,1900);
+      s(at+.035,.3,.09*amount,1400,90);
+    };
+    const thirty=32, sixty=64;
+    const pulse=(at,f=1200,amount=.06)=>{
+      t(f,at,.09,amount,"sine",f*.68,false);
+      t(f*.5,at+.012,.15,amount*.7,"triangle",null,true);
+    };
+    // 01 / POWER-UP — low mechanical ignition, rising turbine and metal strike.
+    hit(0,1.12);
+    t(41,.08,2.9,.17,"sine",29,false);
+    t(82,.12,2.4,.085,"triangle",46,false);
+    t(164,.22,1.8,.035,"sawtooth",328,true);
+    s(.12,2.5,.18,55,3400);
+    [0,.32,.64,.96,1.28,1.6].forEach((v,i)=>pulse(.42+v,420+i*190,.045+i*.004));
+    // 02 / REACTOR — wide harmonic chord with a slow metallic swell.
+    [49,73.42,98,146.83,196,293.66,392,587.33].forEach((f,i)=>{
+      t(f,2.25+i*.075,2.25,.065-i*.004,"sine",null,true);
+      t(f*2,2.42+i*.075,1.35,.022,"triangle",null,true);
+    });
+    s(2.45,2.05,.13,110,9200);
+    [0,.16,.32,.48,.64,.8].forEach((v,i)=>pulse(3.2+v,1050+i*170,.038));
+    // 03 / SECURITY — three hard digital locks, then a confident major chord.
+    [0,.28,.56].forEach((v,i)=>{
+      t(1760-i*220,4.9+v,.16,.075,"square",null,false);
+      t(880-i*110,4.93+v,.24,.055,"triangle",null,true);
+      t(48,4.9+v,.4,.09,"sine",34,false);
+    });
+    [196,246.94,293.66,392,493.88,587.33,783.99].forEach((f,i)=>t(f,5.85+i*.045,1.85,.061-i*.004,"sine",null,true));
+    t(38,5.9,1.7,.22,"sine",24,false);
+    s(5.98,1.4,.15,160,10500);
+    // 04 / LAUNCH — cinematic impact, bright ascending signature and final chime.
+    hit(8.45,1.3);
+    s(8.48,1.35,.23,70,15000);
+    [392,523.25,659.25,783.99,1046.5,1318.51,1567.98,2093].forEach((f,i)=>t(f,8.8+i*.045,1.05,.062-i*.004,"sine",null,true));
+    t(52,8.52,1.65,.2,"sine",28,false);
+    t(1760,9.28,1.1,.06,"triangle",null,true);
+    t(2093,9.48,.95,.05,"sine",null,false);
+  };
+  window.novaSetBootVolume = (volume, enabled) => { if(masterGain&&audioContext) masterGain.gain.setTargetAtTime(enabled ? (Number(volume)/100)*.72 : 0, audioContext.currentTime, .08); };
+  const startButton = $("bootStartButton");
+  const startBoot = () => {
     if (boot.dataset.bootStarted === "1") return;
     boot.dataset.bootStarted = "1";
-    startButton.disabled = true;
-    boot.classList.remove("done", "sequence-scan", "sequence-core", "sequence-lock", "sequence-launch");
-    boot.classList.add("sequence-start");
-    playStartupAudio();
-
-    const clock = $v("bootClock");
-    const clockTimer = window.setInterval(() => {
-      if (clock) clock.textContent = new Date().toLocaleTimeString("en-GB", { hour12: false });
-    }, 1000);
-
-    update("AUTHORIZATION ACCEPTED", 7, 0);
-    setLog(0, "USER AUTHORIZATION ACCEPTED");
-    if (coreState) coreState.textContent = "AUTHENTICATING";
-    window.setTimeout(() => {
-      boot.classList.add("sequence-scan");
-      update("INITIALIZING NEURAL CORE", 23, 0);
-      setLog(1, "POWER MATRIX ONLINE");
-      if (coreState) coreState.textContent = "CORE IGNITION";
-    }, 1250);
-    window.setTimeout(() => {
-      boot.classList.add("sequence-core");
-      update("SYNCHRONIZING NETWORK NODES", 46, 1);
-      setLog(2, "NETWORK DISCOVERY STARTED");
-      if (linkState) linkState.textContent = "SYNCHRONIZING";
-    }, 3150);
-    window.setTimeout(() => {
-      update("ESTABLISHING SECURE CHANNEL", 68, 2);
-      setLog(1, "NETWORK NODES SYNCHRONIZED");
-      setLog(2, "AES-256 CHANNEL VERIFIED");
-      if (coreState) coreState.textContent = "CORE STABLE";
-    }, 5350);
-    window.setTimeout(() => {
-      boot.classList.add("sequence-lock");
-      update("CALIBRATING USER INTERFACE", 86, 2);
-      setLog(0, "IDENTITY TOKEN VERIFIED");
-      if (linkState) linkState.textContent = "SECURE";
-    }, 7350);
-    window.setTimeout(() => {
-      boot.classList.add("sequence-launch");
-      update("NOVALINK IS ONLINE", 100, 3);
-      setLog(2, "ALL SYSTEMS OPERATIONAL");
-      if (coreState) coreState.textContent = "ONLINE";
-      if (linkState) linkState.textContent = "CONNECTED";
-    }, 9000);
-    window.setTimeout(() => {
-      boot.classList.add("done");
-      window.clearInterval(clockTimer);
-      if (audioContext && audioContext.state !== "closed") {
-        window.setTimeout(() => audioContext.close().catch(() => {}), 1200);
+    if (startButton) startButton.disabled = true;
+    // The click/tap is the browser-approved audio gesture. Start sound and visuals in this same event.
+    bootStartedAt = performance.now();
+    try {
+      if (createAudioGraph()) {
+        const resumed = audioContext.resume();
+        playBootSound();
+        Promise.resolve(resumed).catch(error => console.warn("NovaLink audio resume failed:", error));
       }
-    }, 10100);
-  }, { once: true });
+    } catch (error) {
+      console.warn("NovaLink audio could not start:", error);
+    }
+    boot.classList.remove("done","sequence-scan","sequence-core","sequence-lock","sequence-launch");
+    boot.classList.add("sequence-start");
+    const log=(id,message,state)=>{const el=$(id);if(el){el.textContent=message;const badge=el.parentElement?.querySelector("b");if(badge)badge.textContent=state;}};
+    const clock=$("bootClock");
+    const clockTimer=window.setInterval(()=>{if(clock)clock.textContent=new Date().toLocaleTimeString("en-GB",{hour12:false});},1000);
+    updateBoot("AUTHORIZATION ACCEPTED",5,0);
+    log("bootLogOne","USER AUTHORIZATION ACCEPTED","PASS");
+    window.setTimeout(()=>{boot.classList.add("sequence-scan");updateBoot("SCANNING SYSTEM ARCHITECTURE",14,0);log("bootLogTwo","POWER MATRIX ONLINE","ACTIVE");},850);
+    window.setTimeout(()=>{boot.classList.add("sequence-core");updateBoot("IGNITING NOVA REACTOR",32,1);log("bootLogThree","QUANTUM CORE ALIGNMENT","SYNC");},2600);
+    window.setTimeout(()=>{updateBoot("SYNCHRONIZING NETWORK NODES",52,1);log("bootLogTwo","NETWORK NODES SYNCHRONIZED","PASS");},4300);
+    window.setTimeout(()=>{boot.classList.add("sequence-lock");updateBoot("VERIFYING ENCRYPTED CHANNEL",72,2);log("bootLogThree","SECURE CHANNEL VERIFIED","PASS");},6200);
+    window.setTimeout(()=>{updateBoot("ALL SYSTEMS NOMINAL",88,2);},7900);
+    window.setTimeout(()=>{boot.classList.add("sequence-launch");updateBoot("NOVALINK IS READY",100,2);},9600);
+    window.setTimeout(()=>{boot.classList.add("done");window.clearInterval(clockTimer);},10800);
+  };
+  if (startButton) startButton.addEventListener("click", startBoot);
+
 };
 const setupNovaPointerGlow = () => {
   const glow = $("pointerGlow");
