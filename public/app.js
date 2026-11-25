@@ -1749,54 +1749,48 @@ const runNovaBoot = () => {
     audioStarted=true;
     const t=(f,at,duration,volume,type="sine",endFrequency=null,wet=true)=>tone(f,at,duration,volume,type,endFrequency,wet);
     const s=(at,duration,volume,low,high)=>sweep(at,duration,volume,low,high);
-    const impact=(at,level=1)=>{
-      t(36,at,1.05,.34*level,"sine",22,false);
-      t(72,at+.012,.62,.15*level,"triangle",31,false);
-      t(118,at+.018,.32,.065*level,"sawtooth",48,false);
-      s(at,.48,.15*level,95,520);
-      s(at+.025,.24,.075*level,850,110);
+    const hit=(at,amount=1)=>{
+      t( thirty,at,1.25,.34*amount,"sine",24,false);
+      t( sixty,at+.018,.72,.18*amount,"triangle",30,false);
+      t(110,at+.025,.38,.085*amount,"sawtooth",42,false);
+      s(at,.62,.19*amount,65,1900);
+      s(at+.035,.3,.09*amount,1400,90);
     };
-    const tick=(at,pitch=1200,level=.045)=>{
-      t(pitch,at,.075,level,"sine",pitch*.72,false);
-      t(pitch*.5,at+.012,.11,level*.55,"triangle",null,true);
+    const thirty=32, sixty=64;
+    const pulse=(at,f=1200,amount=.06)=>{
+      t(f,at,.09,amount,"sine",f*.68,false);
+      t(f*.5,at+.012,.15,amount*.7,"triangle",null,true);
     };
-    // ACT I — reactor ignition: deep pressure wave, metal resonance and rising power.
-    impact(0,1);
-    t(48,.12,2.6,.12,"sine",34,false);
-    t(96,.18,1.8,.055,"triangle",52,false);
-    s(.18,2.15,.13,75,2600);
-    [0,.42,.84,1.26,1.68].forEach((v,i)=>{
-      tick(.34+v,520+i*185,.035+i*.003);
-      t(62+i*8,.38+v,.32,.045,"triangle",null,false);
+    // 01 / POWER-UP — low mechanical ignition, rising turbine and metal strike.
+    hit(0,1.12);
+    t(41,.08,2.9,.17,"sine",29,false);
+    t(82,.12,2.4,.085,"triangle",46,false);
+    t(164,.22,1.8,.035,"sawtooth",328,true);
+    s(.12,2.5,.18,55,3400);
+    [0,.32,.64,.96,1.28,1.6].forEach((v,i)=>pulse(.42+v,420+i*190,.045+i*.004));
+    // 02 / REACTOR — wide harmonic chord with a slow metallic swell.
+    [49,73.42,98,146.83,196,293.66,392,587.33].forEach((f,i)=>{
+      t(f,2.25+i*.075,2.25,.065-i*.004,"sine",null,true);
+      t(f*2,2.42+i*.075,1.35,.022,"triangle",null,true);
     });
-    // ACT II — the core aligns; a wide, slowly opening harmonic field.
-    [65.41,98,130.81,196,261.63,392,523.25].forEach((f,i)=>{
-      t(f,2.05+i*.105,1.8,.047-i*.003,"sine",null,true);
-      t(f*2,2.16+i*.105,1.05,.014,"triangle",null,true);
+    s(2.45,2.05,.13,110,9200);
+    [0,.16,.32,.48,.64,.8].forEach((v,i)=>pulse(3.2+v,1050+i*170,.038));
+    // 03 / SECURITY — three hard digital locks, then a confident major chord.
+    [0,.28,.56].forEach((v,i)=>{
+      t(1760-i*220,4.9+v,.16,.075,"square",null,false);
+      t(880-i*110,4.93+v,.24,.055,"triangle",null,true);
+      t(48,4.9+v,.4,.09,"sine",34,false);
     });
-    s(2.35,1.9,.085,180,7600);
-    [0,.18,.36,.54,.72].forEach((v,i)=>{
-      tick(3.15+v,980+i*155,.028);
-    });
-    // ACT III — security handshake: three deliberate pulses and a confident lock chord.
-    [0,.24,.48].forEach((v,i)=>{
-      t(1567.98-i*185,4.65+v,.13,.048,"sine",null,false);
-      t(783.99-i*92,4.68+v,.22,.036,"triangle",null,true);
-      t(52,4.65+v,.36,.065,"sine",39,false);
-    });
-    [196,246.94,293.66,392,493.88,587.33].forEach((f,i)=>{
-      t(f,5.48+i*.045,1.55,.052-i*.004,"sine",null,true);
-    });
-    t(49,5.5,1.5,.18,"sine",29,false);
-    s(5.58,1.15,.11,240,8800);
-    // ACT IV — launch: full low-end impact, fast upward sweep and NovaLink's signature.
-    impact(7.05,1.12);
-    s(7.08,1.12,.2,100,12000);
-    [523.25,659.25,783.99,1046.5,1318.51,1760].forEach((f,i)=>{
-      t(f,7.42+i*.055,.82,.052-i*.005,"sine",null,true);
-    });
-    t(2093,7.72,.72,.034,"sine",null,false);
-    t(1567.98,7.84,.92,.045,"triangle",null,true);
+    [196,246.94,293.66,392,493.88,587.33,783.99].forEach((f,i)=>t(f,5.85+i*.045,1.85,.061-i*.004,"sine",null,true));
+    t(38,5.9,1.7,.22,"sine",24,false);
+    s(5.98,1.4,.15,160,10500);
+    // 04 / LAUNCH — cinematic impact, bright ascending signature and final chime.
+    hit(8.45,1.3);
+    s(8.48,1.35,.23,70,15000);
+    [392,523.25,659.25,783.99,1046.5,1318.51,1567.98,2093].forEach((f,i)=>t(f,8.8+i*.045,1.05,.062-i*.004,"sine",null,true));
+    t(52,8.52,1.65,.2,"sine",28,false);
+    t(1760,9.28,1.1,.06,"triangle",null,true);
+    t(2093,9.48,.95,.05,"sine",null,false);
   };
   window.novaSetBootVolume = (volume, enabled) => { if(masterGain&&audioContext) masterGain.gain.setTargetAtTime(enabled ? (Number(volume)/100)*.72 : 0, audioContext.currentTime, .08); };
   const startButton = $("bootStartButton");
@@ -1822,13 +1816,13 @@ const runNovaBoot = () => {
     const clockTimer=window.setInterval(()=>{if(clock)clock.textContent=new Date().toLocaleTimeString("en-GB",{hour12:false});},1000);
     updateBoot("AUTHORIZATION ACCEPTED",5,0);
     log("bootLogOne","USER AUTHORIZATION ACCEPTED","PASS");
-    window.setTimeout(()=>{boot.classList.add("sequence-scan");updateBoot("SCANNING SYSTEM ARCHITECTURE",18,0);log("bootLogTwo","POWER MATRIX ONLINE","ACTIVE");},650);
-    window.setTimeout(()=>{boot.classList.add("sequence-core");updateBoot("IGNITING NOVA REACTOR",36,1);log("bootLogThree","QUANTUM CORE ALIGNMENT","SYNC");},1900);
-    window.setTimeout(()=>{updateBoot("SYNCHRONIZING NETWORK NODES",55,1);log("bootLogTwo","NETWORK NODES SYNCHRONIZED","PASS");},3300);
-    window.setTimeout(()=>{boot.classList.add("sequence-lock");updateBoot("VERIFYING ENCRYPTED CHANNEL",76,2);log("bootLogThree","SECURE CHANNEL VERIFIED","PASS");},4900);
-    window.setTimeout(()=>{updateBoot("ALL SYSTEMS NOMINAL",91,2);},6400);
-    window.setTimeout(()=>{boot.classList.add("sequence-launch");updateBoot("NOVALINK IS READY",100,2);},7200);
-    window.setTimeout(()=>{boot.classList.add("done");window.clearInterval(clockTimer);},8250);
+    window.setTimeout(()=>{boot.classList.add("sequence-scan");updateBoot("SCANNING SYSTEM ARCHITECTURE",14,0);log("bootLogTwo","POWER MATRIX ONLINE","ACTIVE");},850);
+    window.setTimeout(()=>{boot.classList.add("sequence-core");updateBoot("IGNITING NOVA REACTOR",32,1);log("bootLogThree","QUANTUM CORE ALIGNMENT","SYNC");},2600);
+    window.setTimeout(()=>{updateBoot("SYNCHRONIZING NETWORK NODES",52,1);log("bootLogTwo","NETWORK NODES SYNCHRONIZED","PASS");},4300);
+    window.setTimeout(()=>{boot.classList.add("sequence-lock");updateBoot("VERIFYING ENCRYPTED CHANNEL",72,2);log("bootLogThree","SECURE CHANNEL VERIFIED","PASS");},6200);
+    window.setTimeout(()=>{updateBoot("ALL SYSTEMS NOMINAL",88,2);},7900);
+    window.setTimeout(()=>{boot.classList.add("sequence-launch");updateBoot("NOVALINK IS READY",100,2);},9600);
+    window.setTimeout(()=>{boot.classList.add("done");window.clearInterval(clockTimer);},10800);
   };
   if (startButton) startButton.addEventListener("click", startBoot);
 
