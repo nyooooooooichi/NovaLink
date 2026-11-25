@@ -1784,6 +1784,25 @@ const runNovaBoot = () => {
     t(987.77,4.22,.72,.065,"sine");
     t(1318.51,4.3,.8,.045,"sine");
     t(1760,4.42,.62,.025,"sine");
+    // Final cinematic signature: layered reactor thump, harmonic lift and a clean digital lock.
+    t(41,0,.72,.24,"sine",25,false);
+    t(82,.035,.58,.12,"triangle",46,false);
+    t(164,.08,.42,.055,"sawtooth",82,false);
+    s(.06,.82,.085,65,2400);
+    // A measured three-pulse system scan, followed by a resolving chord.
+    [0,.19,.38].forEach((v,i)=>{
+      t(880+i*220,1.92+v,.12,.034,"triangle",null,false);
+      t(440+i*110,1.94+v,.2,.024,"sine",null,true);
+    });
+    [261.63,392,523.25,659.25,783.99].forEach((f,i)=>{
+      t(f,3.58+i*.055,1.05,.035-i*.003,"sine",null,true);
+    });
+    // Launch impact and airy tail; short enough to keep the intro moving.
+    t(31,4.02,.82,.28,"sine",22,false);
+    t(62,4.05,.68,.105,"triangle",35,false);
+    s(4.04,.88,.12,120,9200);
+    t(1975.5,4.68,.48,.028,"sine",null,false);
+    t(1567.98,4.76,.58,.025,"sine",null,true);
   };
   window.novaSetBootVolume = (volume, enabled) => { if(masterGain&&audioContext) masterGain.gain.setTargetAtTime(enabled ? (Number(volume)/100)*.72 : 0, audioContext.currentTime, .08); };
   const startButton = $("bootStartButton");
