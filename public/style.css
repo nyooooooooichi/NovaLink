@@ -1255,3 +1255,65 @@ body.nova-performance-mode .entry-card,body.nova-performance-mode .settings-dial
 .meeting-pip-btn{border-color:rgba(104,190,255,.48);background:linear-gradient(135deg,#18395a,#12243c);color:#cce8ff}
 .meeting-pip-btn.active{border-color:#78caff;background:linear-gradient(135deg,#245b83,#1c3e61);box-shadow:0 0 18px rgba(89,180,255,.24);color:#fff}
 @media(max-width:780px){.meeting-pip-btn{display:none}}
+
+
+/* NOVALINK BOOT 2.0 — sharper command-deck finish without heavy GPU filters */
+.boot-screen{
+  background:
+    radial-gradient(ellipse at 50% 44%,rgba(28,75,142,.2),transparent 34%),
+    radial-gradient(ellipse at 50% 50%,#081225 0%,#030711 68%,#02040a 100%);
+}
+.boot-screen .boot-hud{
+  color:rgba(174,205,255,.78);
+  text-shadow:0 0 10px rgba(73,157,255,.35);
+}
+.boot-screen .boot-hud b{color:#a8eaff}
+.boot-screen .boot-hud-top strong{color:#e4f2ff}
+.boot-screen .boot-hud-left,.boot-screen .boot-hud-right{
+  border-color:rgba(107,190,255,.28);
+  background:linear-gradient(135deg,rgba(10,29,54,.52),rgba(4,12,26,.24));
+}
+.boot-screen .boot-hud-meter{background:rgba(105,170,235,.2)}
+.boot-screen .boot-hud-meter i{
+  background:linear-gradient(90deg,#4d9eff,#a9efff);
+  box-shadow:0 0 13px rgba(87,190,255,.8);
+}
+.boot-screen .boot-ring-a{border-top-color:rgba(117,220,255,.82);border-bottom-color:rgba(104,137,255,.5)}
+.boot-screen .boot-ring-b{border-left-color:rgba(119,205,255,.8);border-right-color:rgba(126,148,255,.55)}
+.boot-screen .boot-ring-c{border-top-color:rgba(185,157,255,.55);border-left-color:rgba(105,194,255,.45)}
+.boot-screen.sequence-start .boot-core{
+  border-color:rgba(159,216,255,.55);
+  box-shadow:0 0 0 5px rgba(99,178,255,.06),0 18px 60px rgba(0,0,0,.55),0 0 48px rgba(68,163,255,.28),inset 0 1px rgba(255,255,255,.25);
+}
+.boot-screen.sequence-start .boot-logo-image{filter:drop-shadow(0 0 18px rgba(93,185,255,.42))}
+.boot-screen.sequence-start .boot-word-main{text-shadow:0 0 28px rgba(95,173,255,.24)}
+.boot-screen.sequence-start .boot-word-sub{color:#a9baff}
+.boot-screen.sequence-start .boot-progress-meta b{color:#d9f4ff}
+.boot-screen.sequence-start .boot-line{height:3px;background:linear-gradient(90deg,rgba(58,105,164,.28),rgba(102,163,229,.2))}
+.boot-screen.sequence-start .boot-line i{
+  background:linear-gradient(90deg,#438fff,#b8f4ff 55%,#8b9cff);
+  box-shadow:0 0 18px rgba(100,192,255,.9);
+}
+.boot-start-button{
+  border-color:rgba(143,205,255,.82);
+  box-shadow:0 0 0 1px rgba(95,177,255,.18),0 0 42px rgba(55,139,255,.28),inset 0 0 35px rgba(82,160,255,.14);
+}
+.boot-start-core{
+  border-color:rgba(183,225,255,.8);
+  background:linear-gradient(145deg,#397ab7 0%,#1b3765 54%,#0b1935 100%);
+  box-shadow:0 0 0 5px rgba(111,190,255,.08),0 0 36px rgba(77,174,255,.5),inset 0 1px rgba(255,255,255,.38);
+}
+.boot-start-button:before{border-color:rgba(119,204,255,.46)}
+.boot-start-button:after{border-color:rgba(153,167,255,.25)}
+.boot-screen.sequence-launch .boot-launch-flash{
+  background:radial-gradient(circle at 50% 46%,rgba(231,249,255,.96),rgba(95,190,255,.42) 11%,rgba(81,113,255,.12) 31%,transparent 57%);
+}
+@media(min-width:761px){
+  /* Keep cinematic layers crisp and inexpensive on integrated GPUs. */
+  .boot-screen .boot-nebula{filter:blur(24px)}
+  .boot-screen .boot-core-glow{filter:blur(5px)}
+  .boot-screen .boot-hud-left,.boot-screen .boot-hud-right{-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .boot-screen .boot-start-button:before,.boot-screen .boot-start-button:after{animation:none!important}
+}
