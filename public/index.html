@@ -15,37 +15,47 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body class="dark-theme">
-  <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div><div class="grid-plane"></div><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="pointer-glow" id="pointerGlow"></div><div class="boot-screen boot-v4" id="bootScreen" aria-label="NovaLink system initialization">
-  <div class="v4-backdrop" aria-hidden="true"><div class="v4-grid"></div><div class="v4-scan"></div><div class="v4-stars"></div></div>
-  <header class="v4-top"><div class="v4-brand"><span class="v4-brand-mark">N</span><span>NOVA<span>LINK</span></span></div><div class="v4-top-status"><i></i> SYSTEM STANDBY <b>●</b> SECURE SESSION</div><time id="bootClock">00:00:00</time></header>
-  <main class="v4-main">
-    <section class="v4-copy">
-      <div class="v4-eyebrow"><i></i> PERSONAL NETWORK INTERFACE <span>V 4.0</span></div>
-      <div class="v4-headline-wrap"><div class="v4-overline">WELCOME TO YOUR SPACE</div><h1>NOVA<span>LINK</span><em>.</em></h1><p class="v4-jp">つながる。その先へ。</p></div>
-      <div class="v4-description">Your world. Your people. One connection.</div>
-      <div class="v4-divider"><i></i></div>
-      <div class="v4-progress-head"><span id="bootStatus">SYSTEM READY TO INITIALIZE</span><b id="bootPercent">00%</b></div>
-      <div class="v4-progress-track"><i id="bootProgressFill"></i><span></span></div>
-      <div class="v4-stage-list"><span class="active">01 <b>CORE</b></span><span>02 <b>NETWORK</b></span><span>03 <b>SECURITY</b></span><span>04 <b>ONLINE</b></span></div>
-      <button class="v4-init-button" id="bootStartButton" type="button"><span class="v4-button-icon">⏻</span><span><b>システムを起動</b><small>INITIALIZE NOVALINK</small></span><strong>→</strong></button>
-      <div class="v4-hint">TAP TO BEGIN <span>•</span> AUDIO ENABLED</div>
-    </section>
-    <section class="v4-visual" aria-hidden="true">
-      <div class="v4-visual-top"><span>NEURAL CORE / 001</span><b id="v4CoreState">DORMANT</b></div>
-      <div class="v4-orbit-scene">
-        <div class="v4-orbit v4-orbit-1"></div><div class="v4-orbit v4-orbit-2"></div><div class="v4-orbit v4-orbit-3"></div><div class="v4-orbit v4-orbit-4"></div>
-        <div class="v4-orbit-dash"></div><div class="v4-core-halo"></div>
-        <div class="v4-core"><span>N</span><i></i></div>
-        <div class="v4-satellite v4-sat-a"></div><div class="v4-satellite v4-sat-b"></div><div class="v4-satellite v4-sat-c"></div>
-        <div class="v4-cross v4-cross-a"></div><div class="v4-cross v4-cross-b"></div>
+  <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div><div class="grid-plane"></div><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="pointer-glow" id="pointerGlow"></div><div class="boot-screen" id="bootScreen" aria-label="NovaLinkを起動中">
+    <div class="boot-universe" aria-hidden="true">
+      <div class="boot-nebula boot-nebula-a"></div><div class="boot-nebula boot-nebula-b"></div><div class="boot-starfield"></div>
+      <div class="boot-hud boot-hud-top" aria-hidden="true"><span>NOVA SYSTEM INTERFACE</span><b>NEURAL LINK / ONLINE</b><i></i><strong id="bootClock">00:00:00</strong></div>
+      <div class="boot-hud boot-hud-left" aria-hidden="true"><span>CORE TEMPERATURE</span><b>OPTIMAL</b><div class="boot-hud-meter"><i></i></div><small>STABILITY 100.0%</small></div>
+      <div class="boot-hud boot-hud-right" aria-hidden="true"><span>NETWORK STATUS</span><b>ENCRYPTED</b><div class="boot-hud-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><small>LATENCY <em>04 ms</em></small></div>
+      <div class="boot-hud boot-hud-bottom" aria-hidden="true"><span>IDENTITY VERIFIED</span><i></i><b>WELCOME BACK</b></div>
+      <div class="boot-scanlines" aria-hidden="true"></div>
+      <div class="boot-reactor" aria-hidden="true">
+        <div class="boot-reactor-track track-one"></div><div class="boot-reactor-track track-two"></div>
+        <div class="boot-reactor-track track-three"></div><div class="boot-reactor-cross"></div>
+        <div class="boot-reactor-core"><i></i><i></i><i></i></div>
+        <div class="boot-reactor-label reactor-label-a">POWER MATRIX <b>STANDBY</b></div>
+        <div class="boot-reactor-label reactor-label-b">QUANTUM SYNC <b>0.00%</b></div>
+        <div class="boot-reactor-label reactor-label-c">NOVA CORE <b>LOCKED</b></div>
       </div>
-      <div class="v4-visual-bottom"><div><small>CORE ENERGY</small><b id="v4Energy">00.0 <i>%</i></b></div><div><small>LINK STATUS</small><b id="v4LinkState">OFFLINE</b></div><div><small>ENCRYPTION</small><b>AES-256</b></div></div>
-      <div class="v4-side-code">NOVA SYSTEMS <span>JAPAN / 2026</span></div>
-    </section>
-  </main>
-  <footer class="v4-footer"><div class="v4-log"><i></i><span id="bootLogOne">AWAITING USER AUTHORIZATION</span></div><div class="v4-log"><i></i><span id="bootLogTwo">CORE SYSTEM STANDBY</span></div><div class="v4-log"><i></i><span id="bootLogThree">NETWORK CHANNEL CLOSED</span></div><div class="v4-footer-right">DESIGNED FOR CONNECTION <b>© NOVALINK</b></div></footer>
-  <div class="v4-launch-cover" aria-hidden="true"><div class="v4-launch-word">CONNECTED<span>.</span></div></div>
-</div>
+      <div class="boot-particle-field" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+<div class="boot-grid-floor"></div><div class="boot-horizon"></div>
+      <div class="boot-ring boot-ring-a"></div><div class="boot-ring boot-ring-b"></div><div class="boot-ring boot-ring-c"></div><div class="boot-energy boot-energy-a"></div><div class="boot-energy boot-energy-b"></div>
+      <div class="boot-corner boot-corner-tl"></div><div class="boot-corner boot-corner-tr"></div><div class="boot-corner boot-corner-bl"></div><div class="boot-corner boot-corner-br"></div>
+      <div class="boot-side-label boot-side-left">NOVA SYSTEMS <span>COMMUNICATION NETWORK</span></div><div class="boot-side-label boot-side-right">SECURE CONNECTION <span>EST. 2026 / JAPAN</span></div>
+    </div>
+    <div class="boot-center-stage">
+      <button class="boot-start-button" id="bootStartButton" type="button" aria-label="NovaLinkを起動する">
+        <span class="boot-start-orbit" aria-hidden="true"></span>
+        <span class="boot-start-core" aria-hidden="true">N</span>
+        <span class="boot-start-label">起動する</span>
+        <span class="boot-start-sub">TAP TO INITIALIZE</span>
+      </button>
+      <div class="boot-pretitle"><i></i> NEXT GENERATION NETWORK <b>•</b> INITIALIZING</div>
+      <div class="boot-core-wrap"><div class="boot-core-glow"></div><div class="boot-core-aura"></div><div class="boot-core"><img src="/icon.svg" alt="NovaLink" class="boot-logo-image"></div><div class="boot-core-caption">N / CORE SYSTEM</div></div>
+      <div class="boot-word"><span class="boot-word-main">NOVA</span><span class="boot-word-sub">LINK</span></div><div class="boot-tagline">つながる。その先へ。</div>
+      <div class="boot-command-feed" aria-hidden="true">
+        <div><i></i><span id="bootLogOne">WAITING FOR USER AUTHORIZATION</span><b>READY</b></div>
+        <div><i></i><span id="bootLogTwo">CORE REACTOR STANDBY</span><b>--</b></div>
+        <div><i></i><span id="bootLogThree">SECURE CHANNEL OFFLINE</span><b>--</b></div>
+      </div>
+      <div class="boot-progress"><div class="boot-progress-meta"><span id="bootStatus">POWERING NOVA CORE</span><b id="bootPercent">00%</b></div><div class="boot-line"><i id="bootProgressFill"></i></div><div class="boot-progress-steps"><span class="active">CORE</span><span>NETWORK</span><span>READY</span></div></div>
+    </div>
+    <div class="boot-bottom"><span>CONNECT. AND GO BEYOND.</span><i></i><span>ALL SYSTEMS / <b>STANDBY</b></span></div><div class="boot-launch-flash" aria-hidden="true"></div>
+  </div>
 <header class="topbar"><a class="brand" href="/"><span class="brand-mark">N</span><span>Nova<span class="brand-light">Link</span></span></a><nav class="main-nav" aria-label="メインナビゲーション"><button type="button" class="main-nav-btn active" id="callHomeNav">通話ホーム</button><button type="button" class="main-nav-btn" id="communityNav">ホームチャット</button></nav><div class="account-actions"><button id="settingsOpenBtn" class="settings-open-btn" type="button" aria-haspopup="dialog" aria-controls="settingsModal" aria-label="設定を開く">⚙ <span>設定</span></button><span id="accountIdentity" class="account-identity hidden"></span><button id="accountBtn" class="account-btn" type="button">ログイン / 登録</button></div><span class="top-note"><i></i> NEXT GENERATION COMMUNICATION <b>● ONLINE</b></span></header>
   <main>
     <section class="hero" id="home">
